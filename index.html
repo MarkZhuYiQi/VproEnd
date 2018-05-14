@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Demo</title>
+    <!--<script src="//cdn.bootcss.com/react/15.4.2/react.min.js"></script>-->
+    <!--<script src="//cdn.bootcss.com/react/15.4.2/react-dom.min.js"></script>-->
+    <script src="./node_modules/zepto/dist/zepto.min.js"></script>
+</head>
+<style>
+    .layoutTop{
+        height:100%;
+        /*border:1px solid red;*/
+    }
+    #logo{
+        width:350px;
+        float:left;
+        font-size:25px;
+        color:#fff;
+        background:#333;
+        padding:0 0 0 5%;
+    }
+    .trigger{
+        display:inline-block;
+        font-size:18px;
+        line-height:64px;
+        padding:0 16px;
+        cursor:pointer;
+        transition:color .3s;
+        position:fixed;
+        right:170px;
+        bottom:37px;
+        z-index:9999;
+    }
+    .trigger:hover{
+        color:#108ee9;
+    }
+    .head{
+        display:block;
+        text-align:center;
+        margin:5% auto;
+        position:fixed;
+    }
+    .head img{
+        width:50%;
+        height:50%;
+        border-radius:3px;
+    }
+    .article{
+        margin:10px auto;
+        text-align:center;
+        padding:10px 10px 50px;
+        width:60%;
+        border-bottom:1px solid #eee;
+    }
+    .article .artTitle{
+        font-size:28px;
+    }
+    .article .artSum{
+        font-size:13px;
+        color:#666;
+        padding:5px;
+    }
+    .article .artDetail{
+        font-size:16px;
+        margin:20px 0;
+        text-indent:2em;
+        line-height:1.5em;
+    }
+    .article .artFoot{
+        margin-top:20px;
+
+    }
+</style>
+<body>
+
+<div id="root">
+    <div id="myNav"></div>
+</div>
+
+<div id="app"></div>
+
+
+<!--<script src="./js/index-compiled.js"></script>-->
+<!--<script src="webpack-dev-server.js"></script>-->
+<!--<script type="text/javascript" src="index-webpack.js"></script>-->
+</body>
+</html>
