@@ -13,11 +13,13 @@ class CommentController extends ShoppingBaseController
     public function init()
     {
         parent::init();
-        $this->enableCsrfValidation=false;
+        $this->enableCsrfValidation = false;
     }
-    public function actionSetCommentSupportRate() {
+
+    public function actionSetCommentSupportRate()
+    {
         // 支持或反对, 指明类型，指定
-        if($body = $this->checkParams(['type', 'comment_id'], 'post')) {
+        if ($body = $this->checkParams(['type', 'comment_id'], 'post')) {
             if ($body['type'] === 'agree') {
                 $this->redis->hincrby('VproCommentAgree', $body['comment_id'], 1);
             } else {
@@ -33,34 +35,39 @@ class CommentController extends ShoppingBaseController
      * 同时设置这个评论表对应的过期时间VproComment_[lesson_id]_expired
      * @return string
      */
-//    public function actionGetComment() {
-//        $body = $this->checkParams(['lesson_id'], 'get');
-//        if ($body) {
-//            if ($this->checkRedisKey($body['lesson_id'], 'VproComment') && $this->checkExpired('lesson_id', 'VproComment')) {
-//                return $this->hgetex('VproComment', $body['lesson_id']);
-//            } else {
-//                $res = VproComment::find(['vpro_comment_lesson_id' => $body['lesson_id']])->asArray()->all();
-//                $this->hsetex('VproComment', $body['lesson_id'], $this->expired_time(3, 10), json_encode($res));
-//                return json_encode($this->returnInfo($res));
-//            }
-//        } else {
-//            return json_encode($this->returnInfo(false, 'PARAMS_ERROR'));
-//        }
-//    }
-    public function actionGetComment() {
+    public function actionGetComment()
+    {
         $body = $this->checkParams(['lesson_id'], 'get');
         if ($body) {
-            if ($this->checkRedisKey('VproComment_' . $body['lesson_id']) && $this->checkExpired('VproComment_' . $body['lesson_id'])) {
-               return $this->redis->hgetall('VproComment_' . $body['lesson_id']);
+            $comments_json = 'VproComment_' . $body['lesson_id'] . '_json';
+            $comments = 'VproComment_' . $body['lesson_id'];
+            if ($this->checkRedisKey($comments_json) && $this->checkRedisKey($comments)) {
+                return json_encode($this->returnInfo(
+                    [
+                        'comments' => json_decode($this->redis->get($comments_json)),
+                        'comment_ids' => $this->redis->hkeys($comments)
+                    ]
+                ));
             } else {
                 $res = VproComment::find(['vpro_comment_lesson_id' => $body['lesson_id']])->orderBy('vpro_comment_time desc')->asArray()->all();
                 $res = $this->genCommentRelations($res);
-//                $j_res = [];
-//                foreach($res as $r) {
-//                    array_push($j_res, )
-//                }
-//                $this->redis->hmset('VproComment_' . $body['lesson_id'], ...$res);
-//                return json_encode($this->returnInfo($res));
+                $j_res = [];
+                $comments_key = [];
+                foreach ($res as $r) {
+                    array_push($comments_key, $r['vpro_comment_id']);
+                    array_push($j_res, $r['vpro_comment_id'], json_encode($r));
+                }
+
+                // 涉及多次操作时应该使用事务！
+                $this->redis->hmset($comments, ...$j_res);
+                $this->redis->set($comments_json, json_encode($res));
+                var_export($j_res);
+                return json_encode($this->returnInfo(
+                    [
+                        'comments' => $res,
+                        'comment_ids' => $comments_key
+                    ]
+                ));
             }
         }
     }
@@ -74,12 +81,14 @@ class CommentController extends ShoppingBaseController
         if (count($data) <= 0) return [];
         $res = [];
         foreach($data as $item) {
+            // 如果是主评论，直接放进数组中
             if(intval($item['vpro_comment_reply_id']) === 0) {
-                array_push($res, [$item['vpro_comment_id'] => $item]);
+                array_push($res, $item);
             } else {
-                // 迭代
-                $arr = $this->iterRelations($data, $item, [$item]);
-                array_push($res, [$item['vpro_comment_id'] => $arr]);
+                // 如果是一个回复评论，需要去往上找爹
+                $item['parent'] = [];
+                $item['parent'] = $this->iterRelations($data, $item, []);
+                array_push($res, $item);
             }
         }
         return $res;
@@ -122,6 +131,7 @@ class CommentController extends ShoppingBaseController
             foreach($agree as $key => $value) {
                 array_push($res, [$value === null ? 0 : $value, $oppose[$key] === null ? 0 : $oppose[$key]]);
             }
+            $res = array_combine($body['comment_ids'], $res);
             return json_encode($this->returnInfo($res));
         } else {
             return json_encode($this->returnInfo(false, 'PARAMS_ERROR'));
