@@ -21,14 +21,14 @@ class VproController extends ShoppingBaseController
         $table=$request->get('table','');
         $key = $request->get('key',false);
         if($table || $key){
-            $res=$this->redis->hget($table,$key);
+            $res=$this->redis->hGet($table,$key);
         }
         return json_encode($res);
     }
     public function actionVprodetail(){
         $video_id=Yii::$app->request->get('videoid',false);
         if($video_id){
-            if($video_info=$this->redis->hget('newestVideos',$video_id)){
+            if($video_info=$this->redis->hGet('newestVideos',$video_id)){
                 return $video_info;
             }
         }else{

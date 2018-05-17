@@ -158,7 +158,6 @@ q;
                 $res['course_price']+= $c->course_price;
             }
             if($orderInfo['course_price'] != $res['course_price'])throw new Exception('order price did not match with the price transferred from front side.', [], 27);
-            $this->redis=\Yii::$app->get('redis');
             if($orderInfo['order_coupon_selected']) {
                 /*
                  * 使用了优惠券的情况

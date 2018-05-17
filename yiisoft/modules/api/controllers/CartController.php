@@ -44,9 +44,9 @@ class CartController extends ShoppingBaseController {
                             $vproCartDetail->save();
                             $detailInfo = $this->getDetailInfo($v);
                             if (key_exists("cart_userid", $detail)) {
-                                $this->redis->sadd("cart" . $detail["cart_userid"], json_encode($detailInfo));
+                                $this->redis->sAdd("cart" . $detail["cart_userid"], json_encode($detailInfo));
                             } else {
-                                $this->redis->sadd("cookiecart" . $detail["cart_id"], json_encode($detailInfo));
+                                $this->redis->sAdd("cookiecart" . $detail["cart_id"], json_encode($detailInfo));
                             }
                             $payment = $payment + $detailInfo['cart_course_price'];
                         }
@@ -102,7 +102,7 @@ class CartController extends ShoppingBaseController {
             $id = "cart" . $cart_userid;
         }
         if ($this->redis->keys($id)) {
-            return json_encode($this->redis->smembers($id));
+            return json_encode($this->redis->sMembers($id));
         }
         return json_encode([]);
     }

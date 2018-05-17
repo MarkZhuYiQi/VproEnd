@@ -18,4 +18,7 @@ class VproComment extends ActiveRecord {
     public function getVproCommentSupportRate() {
         return $this->hasOne(VproCommentSupportRate::className(), ['comment_id' => 'vpro_comment_id']);
     }
+    public function getVproAuth(){
+        return $this->hasOne(VproAuthTable::className(), ['auth_id'=>'vpro_comment_user_id']);
+    }
 }

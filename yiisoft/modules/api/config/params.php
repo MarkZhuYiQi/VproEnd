@@ -24,6 +24,8 @@ MIIEpQIBAAKCAQEA55OtHoprliJ1yerpF5SW3UkUATs5SP8Tgp3a88zwYxvdxtNA/smGLMBC79AgIYAK
         'charset'=>'utf-8',
         'Appname'=>'shopping',
     ],
-    'RETURN_SUCCESS'    =>  20000,
-    'PARAMS_ERROR'      =>  29999
+    'RETURN_SUCCESS'        =>  20000,
+    'REDIS_CONNECT_ERROR'   =>  29997,
+    'REDIS_OPERATE_ERROR'   =>  29998,
+    'PARAMS_ERROR'          =>  29999
 ];

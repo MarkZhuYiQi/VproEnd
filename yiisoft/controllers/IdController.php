@@ -25,7 +25,7 @@ class IdController{
 
         }
     }
-    static function genOrderIds(){
+    static function genOrderIds($redis){
         $timestamp=time();
         //并发，默认为0
         $concurrence=0;
@@ -40,13 +40,14 @@ class IdController{
             $i++;
         }
         $lastId->id_last_id = end($orderIds);
-        if($lastId->update())self::$redis->lpush('order_id', ...$orderIds);
+        if($lastId->update())$redis->lPush('order_id', ...$orderIds);
     }
     static function getOrderId($redis){
-        $redis=\Yii::$app->get('redis');
-        if(!$redis->exists('order_id') || $redis->llen('order_id') <=0){
-            self::genOrderIds();
+//        $redis=\Yii::$app->get('redis');
+        $redis = RedisController::connect();
+        if(!$redis->exists('order_id') || $redis->lLen('order_id') <=0){
+            self::genOrderIds($redis);
         }
-        return $redis->rpop('order_id');
+        return $redis->rPop('order_id');
     }
 }

@@ -47,8 +47,8 @@ class CouponController extends ShoppingBaseController {
         var_export($this->_getCouponIds($this->_convertAsciiStr2DecStr($this->redis->get('coupon_1'))));
         exit();
         foreach($user_ids as $v){
-            $this->redis->setbit('coupon_'.$v['auth_id'], 1, 1);
-            $this->redis->setbit('coupon_isexisted_'.$v['auth_id'], 1, 1);
+            $this->redis->setBit('coupon_'.$v['auth_id'], 1, 1);
+            $this->redis->setBit('coupon_isexisted_'.$v['auth_id'], 1, 1);
             $vpro_user_coupon=ModelFactory::loadModel('vpro_user_coupon');
             if(!$vpro_user_coupon::findOne(['user_coupon_auth_id'=>$v['auth_id']])){
                 $vpro_user_coupon->user_coupon_auth_id=$v['auth_id'];
