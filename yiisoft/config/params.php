@@ -1,5 +1,40 @@
 <?php
 
 return [
-    'adminEmail' => 'admin@example.com',
+    'RETURN_SUCCESS'        =>  20000,
+
+    'QUERY_FAILURE'         =>  29996,
+
+    // redis服务器无法连接的错误
+    'REDIS_CONNECT_ERROR'   =>  29997,
+
+    // redis操作中出现问题
+    'REDIS_OPERATE_ERROR'   =>  29998,
+
+    // 由于传入参数不符合要求或者http请求方法错误导致的错误
+    'PARAMS_ERROR'          =>  29999,
+
+    'private_key'           =>  '-----BEGIN RSA PRIVATE KEY-----
+MIICXAIBAAKBgQDwYV4IPkfNau3aUVojBYAlTH0ZK+4qGxYpmUMvbVy/cPBl++LN
+Zjxa18IDvrbmeBUIJK3KwbTq8STA6bEPWQUtCU7Z+gGPuzmOJDFUttRrkHNcgA1R
+nBwfdSg0x4wVN0vwnNYn1Wzni9urTC3weDEYTLpF/DBPATaN1lnCFzwciwIDAQAB
+AoGAIWN02zJDaO30UcHBAmJONWAVdDyc3S5b+rU2Fs1a96BpU9ET5LHRqlCTu09v
+Oj3tte7aUPJs/cE2+LC9DkOwKxdXIqadj4sFgGdOmH68Q2S+PHV5i2GYwoRUNxdJ
+J8At9BNt4Cy+1GXHHCNX5C1wbnS0CeWiKMxuAgvlsG+31OkCQQD7vemziM/wn4fo
+1MtqMvLLS8O/g1RQ01IVy/xii35wL3GhZpsMFZlRRNtCXNi9RjAWdIwtDNkNrhV0
+SdMCtAc1AkEA9HJBz0g7thlZ/IHqtOqH1/qmrlDDlSFfBFW9g0iNvbLVDf9+Fsph
+FQDH7SGCOJvF5g2FHdoiC4bwMB+6u4tMvwJARv5N09W3XpJ+z4iDPRXVJsPdFjtB
+IfIWahM2v8u7AoQ+tVesTgIhVKvocZShgu8yTILdrS68X4FCh6LyIQcIKQJAUat6
+4U445PZDYmHlkNxq1nYgCk1hiwnDPSeIUbyD3sVI+YxLDEJBfUrtgQSZBWDGFb6e
+owKmLUPAK9PuB4ra8QJBALH0XzyJb5cdOCgiTKZTjevMft62Sysy0mCBCt9pjmwU
+rnNmJz3ShQiEBFOdE1r73GB6KS+RXJG1LzD2naniyVk=
+-----END RSA PRIVATE KEY-----',
+
+    'public_key'            =>  '-----BEGIN PUBLIC KEY-----
+MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDwYV4IPkfNau3aUVojBYAlTH0Z
+K+4qGxYpmUMvbVy/cPBl++LNZjxa18IDvrbmeBUIJK3KwbTq8STA6bEPWQUtCU7Z
++gGPuzmOJDFUttRrkHNcgA1RnBwfdSg0x4wVN0vwnNYn1Wzni9urTC3weDEYTLpF
+/DBPATaN1lnCFzwciwIDAQAB
+-----END PUBLIC KEY-----'
+
 ];

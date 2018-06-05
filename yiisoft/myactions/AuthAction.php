@@ -39,4 +39,12 @@ class AuthAction extends Action{
             return ['auth_token'=>false];
         }
     }
+    function decrypt($data)
+    {
+        $pi_key = openssl_pkey_get_private(('PRIVATE_KEY'));//这个函数可用来判断私钥是否是可用的，可用返回资源id Resource id
+        $pu_key = openssl_pkey_get_public(config('PUBLIC_KEY'));//这个函数可用来判断公钥是否是可用的
+        $decrypt = '';
+        openssl_private_decrypt(base64_decode($data), $decrypt, $pi_key);//私钥解密
+        return $decrypt;
+    }
 }

@@ -35,9 +35,13 @@ class ProductController extends ShoppingBaseController
             $d_res = $this->getCourseDetail($course_id);
             $c_res = $this->getCrumbnavbar($d_res['course_pid']);
             if(!count($l_res) || !count($d_res) || !count($c_res)){}
-            return json_encode(['detail'=>$d_res, 'lesson_list'=>$l_res, 'crumb'=>$c_res]);
+            return json_encode($this->returnInfo(['detail'=>$d_res, 'lesson_list'=>$l_res, 'crumb'=>$c_res]));
         }
     }
+    public function actionGetCrumb() {
+
+    }
+
     function actionCheckcourses(){
         $request=\Yii::$app->request;
         $orderInfo=$request->bodyParams;
@@ -70,13 +74,17 @@ class ProductController extends ShoppingBaseController
         return $res;
     }
 
-
+    /**
+     * 面包屑导航位置
+     * @param $course_pid
+     * @return array
+     */
     public function getCrumbnavbar($course_pid)
     {
         if ($vproCrumbNavbar = $this->redis->get("VproCrumbNavbar")) {
             $originNav = json_decode($vproCrumbNavbar);
         } else {
-            $vpro_navbar = ModelFactory::loadModel("Vpro_navbar");
+            $vpro_navbar = ModelFactory::loadModel("vpro_navbar");
             $originNav = $vpro_navbar::find()->asArray()->all();
             $this->redis->set("VproCrumbNavbar", json_encode($originNav));
         }
@@ -87,6 +95,14 @@ class ProductController extends ShoppingBaseController
             return $crumb;
         }
     }
+
+    /**
+     * 根据当前导航，一级一级往上寻找父级导航，一直到顶层
+     * @param $course_pid
+     * @param $originNav
+     * @param array $res
+     * @return array
+     */
     public function _crumbRecursion($course_pid, $originNav, $res=[]){
         foreach($originNav as $value){
             if($value->nav_id ==$course_pid){

@@ -17,8 +17,10 @@ use app\models\VproAuthTable;
 class AuthController extends BaseController{
     public $modelClass = 'api\models\VproAuth';
     private $request;
+    private $params;
     function init() {
         $this->request = \Yii::$app->request;
+        $this->params = \Yii::$app->getModule('api')->params;
     }
     function behaviors(){
         $behaviors=parent::behaviors();
@@ -49,12 +51,18 @@ class AuthController extends BaseController{
     public function actionOptions(){
         \Yii::$app->getResponse()->setStatusCode(204);
     }
+
+    /**
+     * 取得用户信息
+     * @return array
+     */
     public function actionInfo(){
         $token = $this->request->get('token', '');
-        if($token === '')return ['code' => 50008, 'data' => 'token is null'];
+        if($token === '')return ['code' => $this->params['USER_TOKEN_ILLEGAL'], 'data' => 'token is null'];
         $vpro_auth = new VproAuth();
         $user_info = $vpro_auth::findOne(['auth_token' => $token]);
-        if(!$user_info)return ['code' => 50012, 'data' => 'user could not found'];
+        if(!$user_info)return ['code' => $this->params['USER_TOKEN_NOT_FOUND'], 'data' => 'user token could not found'];
+
         return ['data'=>['roles'=>[$user_info->roles_name], 'name'=>$user_info->auth_appid, 'avatar'=>'123', 'id'=>$user_info->auth_id], 'code'=>20000];
     }
     public function actionLogout(){
@@ -156,6 +164,10 @@ sql;
         return $res;
     }
     public function getCourseNav(){
+
+    }
+    public function getAuth()
+    {
 
     }
 }

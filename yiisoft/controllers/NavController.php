@@ -1,14 +1,9 @@
 <?php
 namespace app\controllers;
-use common\RedisData;
 use app\models\ModelFactory;
-use app\models\Customer;
 use Yii;
-use yii\base\Exception;
-use yii\web\Controller;
-use yii\web\UnauthorizedHttpException;
 
-class VproController extends CombaseController
+class NavController extends CombaseController
 {
 //------------------------------------------------------------------------------------------------------------------
 
@@ -18,36 +13,6 @@ class VproController extends CombaseController
         parent::init();
         $this->enableCsrfValidation=false;
     }
-    public function actionVpro(){
-
-        exit();
-
-        $res=$this->redis->getAll('VproIndex');
-//        var_export($res);
-        return json_encode($res);
-    }
-
-
-    public function actionVproauth(){
-        $request=Yii::$app->request;
-        $table=$request->get('table','');
-        $key = $request->get('key',false);
-        if($table || $key){
-            $res=$this->redis->hget($table,$key);
-        }
-        return json_encode($res);
-    }
-    public function actionVprodetail(){
-        $video_id=Yii::$app->request->get('videoid',false);
-        if($video_id){
-            if($video_info=$this->redis->hGet('newestVideos',$video_id)){
-                return $video_info;
-            }
-        }else{
-            return json_encode(['video_id'=>false]);
-        }
-    }
-
     /**
      * @return string
      * 获得首页导航信息，前6名的课程和导航条
@@ -92,46 +57,64 @@ class VproController extends CombaseController
     }
 
 
-
-    public function actionCategories(){
-        $request=Yii::$app->request;
-        $page = $request->get("p", 1);
-        $nav_key = $request->get("category", 'index');
-        $hash_name = "VproCourses_".$nav_key;
-        if($this->checkRedisKey($hash_name) && $this->checkRedisKey($hash_name, $page) && $this->checkExpired($hash_name)){
-            if($this->redis->hExists($hash_name, $page)) {
-                return json_encode($this->returnInfo(json_decode($this->hgetex($hash_name, $page)), $this->params['RETURN_SUCCESS']));
-            }
-            // redis中没找到该分类下的对应页，可能是瞎传页码数据
-            return json_encode($this->returnInfo("page not found", $this->params['PARAMS_ERROR']));
-        }
-        //如果nav_id没有找到说明有人瞎访问,直接返回首页
-        $nav_id = $this->redis->hGet("VproNavbarList", $nav_key) ? $this->redis->hGet("VproNavbarList", $nav_key) : 9999;
-        $res = json_decode($this->redis->get("VproNavbar"));
-        //拿到了所需要的导航对象，根据这个集合去取值
-        $request_nav = $this->_getSubNavs($res, $nav_id);
-        //导航下的所有子导航的IDs
-        $allNavs = $this->_getAllNavIds($request_nav);
-        //把所有子导航数组转变成字符串,等待sql查询。
-        $allNavs = implode(",",$allNavs);
-        //获得该导航下所有课程
-        if($this->_getCoursesInfo($nav_key, $allNavs)){
-            if($c_res=$this->hgetex($hash_name, $page)){
-                return json_encode($this->returnInfo(json_decode($c_res)));
-            }
-            // 数据库里也得不到对应的数据
-            return json_encode($this->returnInfo("mpage not found", $this->params['PARAMS_ERROR']));
-        }
-        // 数据库里没有这个课程
-        return json_encode($this->returnInfo("failed when get courses info!", $this->params['QUERY_FAILURE']));
+    public function actionGetNavTree()
+    {
+        $res = json_decode($this->redis->get('VproNavbar'));
+        if(!$res) $res = $this->genNavTree();
+        return json_encode($this->returnInfo($res));
     }
-    public function actionGetpage(){
-        $request=Yii::$app->request;
-        if($nav_key = $request->get("category", "")){
-            return json_encode($this->returnInfo($this->redis->hLen("VproCourses_".$nav_key)), $this->params['RETURN_SUCCESS']);
-        }
-        return json_encode('miss params', $this->params['PARAMS_ERROR']);
 
+    /**
+     * 从数据库获得导航内容
+     * @return array
+     */
+    public function getNav()
+    {
+        $vpro_navbar = ModelFactory::loadModel("vpro_navbar");
+        $originNav = $vpro_navbar::find()->orderBy('nav_id')->asArray()->all();
+        return $originNav;
+    }
+    /**
+     * 生成导航层级关系
+     * @return array
+     */
+    public function genNavTree()
+    {
+        $navTree = [];
+        $navList = $this->getNav();
+        foreach ($navList as $nav)
+        {
+            if($nav['nav_pid'] === 0)
+            {
+                $children = $this->genNavChild($nav, $navList);
+                if(count($children) > 0) $nav['children'] = $children;
+                array_push($navTree, $nav);
+            }
+        }
+        $this->redis->setex('VproNavbar', 3600 * rand(8, 20), json_encode($navTree));
+        return $navTree;
+    }
+
+    /**
+     * 递归，通过父元素查找其子导航，将所有子导航找出来，该函数服务于genNavTree
+     * @param $nav              $nav顶级元素
+     * @param array $navList    导航列表
+     * @return array            返回子元素数组
+     */
+    private function genNavChild($nav, $navList=[])
+    {
+        $res = [];
+        foreach($navList as $v)
+        {
+            // 找出父元素的child
+            if($v['nav_pid'] === $nav['nav_id'])
+            {
+                $children = $this->genNavChild($v, $navList);
+                if(count($children) > 0) $v['children'] = $children;
+                array_push($res, $v);
+            }
+        }
+        return $res;
     }
 
     /**
@@ -192,7 +175,6 @@ class VproController extends CombaseController
         }
         return $nav_ids;
     }
-
 
     //获得该导航下所有的导航子ID
     //用于查找导航下的全部课程使用
@@ -264,54 +246,5 @@ QUERY;
         }
         $database = 'VproIndexCourses';
         $this->hsetex($database, $nav_key, $this->expired_time(0,0) ,json_encode($indexNavCourses));
-    }
-
-    /**
-     * 拿到分类下的全部课程信息
-     * @param $nav_key      $string 分类名称
-     * @param $allNavs
-     * @return bool
-     */
-    public function _getCoursesInfo($nav_key, $allNavs)
-    {
-        $db = Yii::$app->db;
-        $query = <<<QUERY
-SELECT
-	course.course_id,
-	course.course_author,
-	course.course_time,
-	course.course_price,
-	course.course_title,
-	course_cover.course_cover_key,
-	course_cover.course_cover_address,
-	course_cover.course_cover_isuploaded,
-	course_cover.course_cover_isused,
-	course_detail.course_score,
-	course_detail.course_clickNum
-FROM
-	vpro_courses_temp_detail AS course_detail
-LEFT JOIN vpro_courses_cover AS course_cover ON course_detail.course_id = course_cover.course_cover_id
-LEFT JOIN vpro_courses AS course ON course_detail.course_id = course.course_id
-WHERE
-	course_detail.course_id IN (
-		SELECT
-			course_id
-		FROM
-			vpro_courses_temp_detail
-		WHERE
-			course_pid IN ($allNavs)
-	)
-QUERY;
-        $database = "VproCourses";
-        if($res = $db->createCommand($query)->queryAll()){
-            $pageRange = 40;
-            $pageCount = ceil(count($res) / $pageRange);
-            for ($i = 1; $i <= $pageCount; $i++) {
-                $this->hsetex($database . "_" . $nav_key, $i, $this->expired_time(0,0), json_encode(array_slice($res, ($i - 1) * $pageRange, $pageRange)));
-            }
-            return true;
-        }
-        $this->hsetex($database . "_" . $nav_key, 1, $this->expired_time(0,0), '');
-        return false;
     }
 }

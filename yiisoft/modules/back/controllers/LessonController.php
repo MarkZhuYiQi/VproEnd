@@ -99,6 +99,7 @@ class LessonController extends BackBaseController {
                     $video_detail_info = ['detail_content' => $edit_info['lesson_info']['detail_content']];
                     $video_detail_id = $this->setVproVideoDetail($video_detail_info, $video_detail_instance);
                 }
+                // -----------------------------------------------------------------------------------------------------
                 // 设置lesson相关信息
                 if (isset($edit_info['lesson_info']['lesson_title'])) {
                     $lesson_instance = VproCoursesLessonList::findOne(['lesson_id' => $lesson_id, 'lesson_course_id' => $course_id]);

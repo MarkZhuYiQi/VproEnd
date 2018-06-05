@@ -7,6 +7,7 @@
  */
 namespace api\myactions;
 
+use app\common\Common;
 use Lcobucci\JWT\Builder;
 use Lcobucci\JWT\Parser;
 use Lcobucci\JWT\Signer\Hmac\Sha256;
@@ -18,31 +19,30 @@ class AuthAction extends Action{
      * 返回格式：
      * {auth_token: '' ,  code : xxxxx, status: ''}
      */
-    const TOKEN_SUCCESS = 20000;
-    const TOKEN_EXIST = 50012;
-    const TOKEN_ILLEGAL = 50008;
-    const TOKEN_EXPRIRED = 50014;
-    const TOKEN_NULL = 50016;
     public function run(){
+
         $model=$this->modelClass;
-        $request=Yii::$app->request;
+        $request = \Yii::$app->request;
+        $params = \Yii::$app->getModule('api')->params;
         if($request->isPost){
-            $userInfo=$request->bodyParams;
-            $auth_appid=$userInfo['user_name'];
-            $auth_appkey=$userInfo['user_pass'];
+            $userInfo = $request->bodyParams;
+            foreach($userInfo as $key => $value)
+            {
+                $userInfo[$key] = Common::decrypt($value);
+            }
         }
+        $auth_appid = $userInfo['user_name'];
+        $auth_appkey = $userInfo['user_pass'];
         //如果用户名和密码为空，返回空token；将该记录找出来
         if(!$auth_appid||!$auth_appkey){
             return
                 [
-                    'code'=>self::TOKEN_NULL,
-                    'data'=>[
-                        'auth_token'=>false,
-                        'status'=>'username or userpass is null',
-                    ]
+                    'code'  =>  $params['USER_PARAMS_NULL'],
+                    'data'  =>  'username or userpass is null or wrong format'
                 ];
         }
         else{
+            // 这里需要做限制，防止数据库攻击
             $model=$model::findOne(['auth_appid'=>urlencode($auth_appid),'auth_appkey'=>$auth_appkey]);
 //            $model->auth_token="";
 //            $model->update();
@@ -52,23 +52,27 @@ class AuthAction extends Action{
             $signer=new Sha256();
             $key=\Yii::$app->getModule('api')->params['securityKey'];
             $jwt = $model->auth_token ? (new Parser())->parse((string)$model->auth_token):false;
+            // 判断token是否有效，false是jwt无效验证，需要返回错误
             if($jwt){
+                //
                 $vd=new ValidationData();
                 $vd->setAudience('zhu');
                 $vd->setIssuer('mark');
                 $vd->setId("1111111");
                 $vd->setSubject('everyone');
                 $vd->setCurrentTime(time());
+                // 判断字符串是否过期并且是否有效
                 if($jwt->verify($signer, $key)&&$jwt->validate($vd)){
-//                    return ['auth_token'=>$model->auth_token, 'status'=>'exist', 'code'=>self::TOKEN_EXIST];
-                    return ['data'=>['auth_token'=>$model->auth_token, 'status'=>'exist'], 'code'=>self::TOKEN_SUCCESS];
+                    return [
+                        'data'=>['auth_token'=>$model->auth_token, 'status'=>'exist'],
+                        'code'=>$params['RETURN_SUCCESS']
+                    ];
                 }
-//                return ['auth_token'=>false, 'err'=>'token expired'];
             }
             $token=(new Builder())->setIssuer("mark")      //iss, jwt签发者
             ->setAudience("zhu")       //aud 接收jwt的一方
             ->setSubject("everyone")         //sub面向的用户
-            ->setExpiration(time()+\Yii::$app->getModule('api')->params['expireTime'])        //exp过期时间
+            ->setExpiration(time() + intval(\Yii::$app->getModule('api')->params['expireTime']))        //exp过期时间
             ->setIssuedAt(time())                       //iat签发时间，以上是标准中注册的声明
             ->setId("1111111", true)    //给头部加入一个键值对
             ->set("auth_id", $model->auth_id)
@@ -77,9 +81,15 @@ class AuthAction extends Action{
             ->getToken();
             $model->auth_token=(string)$token;
             $model->update();
-            return ['data'=>['auth_token'=>(string)$token, 'status'=>'new'], 'code'=>self::TOKEN_SUCCESS];
+            return [
+                'data'=>['auth_token'=>(string)$token, 'status'=>'new'],
+                'code'=>$params['RETURN_SUCCESS']
+            ];
         }else{
-            return ['data'=>['auth_token'=>false, 'status'=>'user '.$auth_appid.' could not found'], 'code'=>self::TOKEN_ILLEGAL];
+            return [
+                'data'=>['auth_token'=>false, 'status'=>'user '.$auth_appid.' could not found'],
+                'code'=>$params['USER_TOKEN_ILLEGAL']
+            ];
         }
     }
 }

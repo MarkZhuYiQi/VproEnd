@@ -8,7 +8,7 @@ use yii\base\Exception;
 use yii\web\Controller;
 use yii\web\UnauthorizedHttpException;
 
-class VproController extends CombaseController
+class CategoryController extends CombaseController
 {
 //------------------------------------------------------------------------------------------------------------------
 
@@ -18,78 +18,61 @@ class VproController extends CombaseController
         parent::init();
         $this->enableCsrfValidation=false;
     }
-    public function actionVpro(){
-
-        exit();
-
-        $res=$this->redis->getAll('VproIndex');
-//        var_export($res);
-        return json_encode($res);
+    /**
+     * 从数据库获得导航内容
+     * @return array
+     */
+    public function getNav()
+    {
+        $vpro_navbar = ModelFactory::loadModel("vpro_navbar");
+        $originNav = $vpro_navbar::find()->orderBy('nav_id')->asArray()->all();
+        return $originNav;
     }
-
-
-    public function actionVproauth(){
-        $request=Yii::$app->request;
-        $table=$request->get('table','');
-        $key = $request->get('key',false);
-        if($table || $key){
-            $res=$this->redis->hget($table,$key);
-        }
-        return json_encode($res);
-    }
-    public function actionVprodetail(){
-        $video_id=Yii::$app->request->get('videoid',false);
-        if($video_id){
-            if($video_info=$this->redis->hGet('newestVideos',$video_id)){
-                return $video_info;
+    /**
+     * 生成导航层级关系
+     * @return array
+     */
+    public function genNavTree()
+    {
+        $navTree = [];
+        $navList = $this->getNav();
+        foreach ($navList as $nav)
+        {
+            if($nav['nav_pid'] === 0)
+            {
+                $children = $this->genNavChild($nav, $navList);
+                if(count($children) > 0) $nav['children'] = $children;
+                array_push($navTree, $nav);
             }
-        }else{
-            return json_encode(['video_id'=>false]);
         }
+        $this->redis->setex('VproNavbar', 3600 * rand(8, 20), json_encode($navTree));
+        return $navTree;
     }
 
     /**
-     * @return string
-     * 获得首页导航信息，前6名的课程和导航条
+     * 递归，通过父元素查找其子导航，将所有子导航找出来，该函数服务于genNavTree
+     * @param $nav              $nav顶级元素
+     * @param array $navList    导航列表
+     * @return array            返回子元素数组
      */
-    public function actionIndexnav(){
-        $request=Yii::$app->request;
-        $nav_key = $request->get("nav", 'index');
-        //如果nav_id没有找到说明有人瞎访问
-        $nav_id = $this->redis->hGet("VproNavbarList", $nav_key);
-        $nav_id = $this->redis->hGet("VproNavbarList", $nav_key)?$nav_id:9999;
-        //获得导航原始数据
-        $res = json_decode($this->redis->get("VproNavbar"));
-        //获得当前指定项目的子导航
-        if(!$this->hgetex('VproIndexNavs', $nav_key)){
-            //拿到所有子导航
-            $request_nav = $this->_getSubNavs($res, $nav_id);
-            //根据每个子导航的id找出其下的所有子导航id编号，组成数组，用于辨别身份
-            $indexSubNavs=[];
-
-            if($nav_id==9999||isset($request_nav->children)){
-                //将次级导航json写入到redis
-                $this->hsetex("VproIndexNavs",$nav_key,$this->expired_time(0,0),json_encode($request_nav));
+    private function genNavChild($nav, $navList=[])
+    {
+        $res = [];
+        foreach($navList as $v)
+        {
+            // 找出父元素的child
+            if($v['nav_pid'] === $nav['nav_id'])
+            {
+                $children = $this->genNavChild($v, $navList);
+                if(count($children) > 0) $v['children'] = $children;
+                array_push($res, $v);
             }
         }
-        if(!$this->hgetex("VproIndexCourses", $nav_id)){
-            foreach($this->_getSubNav($this->_getSubNavs($res, $nav_id)) as $v){
-                //当前子导航分支下的子导航对象(包括自己)
-                $res_nav = $this->_getSubNavs($res, $v->nav_id);
-                //所有子导航的id
-                $res_nav_ids = $this->_getAllNavIds($res_nav);
-                //下面的子导航id们拿到了！
-                //赶紧存起来！数组形式存放所有id
-                $indexSubNavs[$v->nav_id]=$res_nav_ids;
-            }
-            //获得前6名的课程
-            $this->_getIndexCoursesInfo($nav_id, $indexSubNavs);
-        }
-        $index = [];
-        $index['nav'] = json_decode($this->hgetex("VproIndexNavs", $nav_key));
-        $index['courses'] = json_decode($this->hgetex("VproIndexCourses", $nav_id));
-        return json_encode($this->returnInfo($index));
+        return $res;
     }
+
+
+
 
 
 
@@ -123,7 +106,7 @@ class VproController extends CombaseController
             return json_encode($this->returnInfo("mpage not found", $this->params['PARAMS_ERROR']));
         }
         // 数据库里没有这个课程
-        return json_encode($this->returnInfo("failed when get courses info!", $this->params['QUERY_FAILURE']));
+        return json_encode($this->returnInfo("failed when get courses!", $this->params['QUERY_FAILURE']));
     }
     public function actionGetpage(){
         $request=Yii::$app->request;
@@ -133,12 +116,12 @@ class VproController extends CombaseController
         return json_encode('miss params', $this->params['PARAMS_ERROR']);
 
     }
-
     /**
      * @param $res      导航集合
      * @param $nav_id   需要找到的导航id
      * @return mixed    返回的是一个包含当前寻找的导航内容的导航对象
      * 递归导航集合，找到需要的导航id以后返回。
+     *
      */
     public function _getSubNavs($res, $nav_id=0){
         if($nav_id==9999){
@@ -214,56 +197,6 @@ class VproController extends CombaseController
             return $nav_ids;
         }
         return $nav_ids;
-    }
-
-    public function _getIndexCoursesInfo($nav_key, $indexSubNavs){
-        $query=<<<QUERY
-SELECT
-	course.course_id,
-	course.course_author,
-	course.course_time,
-	course.course_price,
-	course.course_title,
-	course_cover.course_cover_key,
-	course_cover.course_cover_address,
-	course_cover.course_cover_isuploaded,
-	course_cover.course_cover_isused,
-	course_detail.course_score,
-	course_detail.course_clickNum
-FROM
-	vpro_courses_temp_detail AS course_detail
-LEFT JOIN vpro_courses_cover AS course_cover ON course_detail.course_id = course_cover.course_cover_id
-LEFT JOIN vpro_courses AS course ON course_detail.course_id = course.course_id
-WHERE
-	course_detail.course_id IN (
-		SELECT
-			f.course_id
-		FROM (
-			SELECT 
-				course_id
-			FROM 
-				vpro_courses_temp_detail
-			WHERE
-				course_pid 
-			IN
-				({{%pid%}})
-			ORDER BY
-				course_clickNum 
-			DESC
-			LIMIT
-				6) 
-		as f
-);
-QUERY;
-        $db=Yii::$app->db;
-        $indexNavCourses=[];
-        //根据每个分类的旗下ID进行循环取出前六名课程。
-        foreach($indexSubNavs as $key => $value){
-            $res=$db->createCommand(str_replace("{{%pid%}}",implode(",", $value),$query))->queryAll();
-                $indexNavCourses[$key]=$res;
-        }
-        $database = 'VproIndexCourses';
-        $this->hsetex($database, $nav_key, $this->expired_time(0,0) ,json_encode($indexNavCourses));
     }
 
     /**
