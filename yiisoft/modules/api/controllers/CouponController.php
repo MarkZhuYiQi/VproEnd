@@ -20,7 +20,7 @@ class CouponController extends ShoppingBaseController {
             $coupon_valid = $this->_getvalidCoupons($user_info);
             return json_encode($coupon_valid);
         }
-        return json_encode([]);
+        json_encode($this->returnInfo('coupon account create failed!', $this->params['COUPON_ACCOUNT_CREATE_FAILED']));
     }
 
 

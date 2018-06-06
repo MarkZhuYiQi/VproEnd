@@ -36,6 +36,12 @@ return [
     'REDIS_OPERATE_ERROR'   =>  29998,
     'PARAMS_ERROR'          =>  29999,
     'QUERY_FAILURE'         =>  29996,
-    'COMMENTS_COUNT'        =>  10
+    'COMMENTS_COUNT'        =>  10,
+
+    // 下单相关：
+    'COURSES_NOT_FOUND'     =>  70001,
+
+    // 优惠券：
+    'COUPON_ACCOUNT_CREATE_FAILED'  =>  71001,
 
 ];

@@ -45,10 +45,9 @@ class ProductController extends ShoppingBaseController
     function actionCheckcourses(){
         $request=\Yii::$app->request;
         $orderInfo=$request->bodyParams;
-        if(count($orderInfo)==0)return json_encode([]);
+        if(count($orderInfo) === 0)return json_encode($this->returnInfo('courses not found', $this->params['COURSES_NOT_FOUND']));
         $check_res = $this->checkCourses($orderInfo["order_course_ids"]);
-//        var_export($check_res);
-        return json_encode($check_res);
+        return json_encode($this->returnInfo($check_res));
     }
 
     /**

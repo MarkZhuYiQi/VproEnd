@@ -596,16 +596,16 @@
         },
         {
             "name": "riverslei/payment",
-            "version": "v4.1.5",
+            "version": "v4.1.7",
             "source": {
                 "type": "git",
                 "url": "https://github.com/helei112g/payment.git",
-                "reference": "dfcd42bea968f5d69d0db25b18bd1f5855347f9a"
+                "reference": "94ecb0306288e3d8f60bbcc1a3a5e045c5bfa588"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/helei112g/payment/zipball/dfcd42bea968f5d69d0db25b18bd1f5855347f9a",
-                "reference": "dfcd42bea968f5d69d0db25b18bd1f5855347f9a",
+                "url": "https://api.github.com/repos/helei112g/payment/zipball/94ecb0306288e3d8f60bbcc1a3a5e045c5bfa588",
+                "reference": "94ecb0306288e3d8f60bbcc1a3a5e045c5bfa588",
                 "shasum": ""
             },
             "require": {
@@ -646,7 +646,7 @@
                 "支付宝支付",
                 "集成支付接口SDK"
             ],
-            "time": "2018-01-12T08:23:00+00:00"
+            "time": "2018-05-23T12:01:20+00:00"
         },
         {
             "name": "swiftmailer/swiftmailer",

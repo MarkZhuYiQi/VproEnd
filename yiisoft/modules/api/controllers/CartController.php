@@ -90,21 +90,27 @@ class CartController extends ShoppingBaseController {
         }
         return false;
     }
+
+    /**
+     * 如果已经登录了，那么会获得user与购物车id对应的id，没有登录会得到cookieid，如果啥都没有就返回空
+     * @return string
+     */
     function actionUsercart()
     {
-        $request = \Yii::$app->request;
-        $cart_userid = $request->get('cart_userid', false);
-        $cart_cookieid = $request->get('cart_cookieid', false);
-//        if($cart_cookieid || $cart_userid){};
-        if (!$cart_userid) {
-            $id = "cookiecart" . $cart_cookieid;
-        } else {
-            $id = "cart" . $cart_userid;
+        $body = \Yii::$app->request->bodyParams;
+        if (isset($body['cart_cookieid'])) {
+            $id = "cookiecart" . $body['cart_cookieid'];
+        } elseif (isset($body['cart_userid'])) {
+            $id = "cart" . $body['cart_userid'];
         }
+        $cartInfo = [];
         if ($this->redis->keys($id)) {
-            return json_encode($this->redis->sMembers($id));
+            foreach($this->redis->sMembers($id) as $value) {
+                array_push($cartInfo, json_decode($value));
+            }
+            return json_encode($this->returnInfo($cartInfo));
         }
-        return json_encode([]);
+        return json_encode($this->returnInfo([]));
     }
 
 

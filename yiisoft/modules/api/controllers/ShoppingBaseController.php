@@ -126,13 +126,16 @@ class ShoppingBaseController extends CombaseController{
      * @return boolean
      */
     function checkUserCouponExisted($user_id){
-        if(!$this->redis->exists('coupon_'.$user_id) || !$this->redis->exists('coupon_isexisted_'.$user_id)){
-            $vpro_user_coupon=ModelFactory::loadModel('vpro_user_coupon');
-            $user_coupons=$vpro_user_coupon->findOne(['user_coupon_auth_id'=>$user_id]);
-            if($user_coupons){
-                $this->redis->set('coupon_'.$user_id, $this->_convertDecStr2AsciiStr($vpro_user_coupon->user_coupon_bit));
-                $this->redis->set('coupon_isexisted_'.$user_id, $this->_convertDecStr2AsciiStr($vpro_user_coupon->user_coupon_isexisted_bit));
-            }else{
+        if(!$this->redis->exists('coupon_'.$user_id) || !$this->redis->exists('coupon_isexisted_'.$user_id)) {
+//        if($this->redis->exists('coupon_'.$user_id) || !$this->redis->exists('coupon_isexisted_'.$user_id)) {
+            $vpro_user_coupon = ModelFactory::loadModel('vpro_user_coupon');
+            $user_coupons=$vpro_user_coupon->findOne(['user_coupon_auth_id' => $user_id]);
+            if($user_coupons) {
+                $this->redis->multi()
+                    ->set('coupon_'.$user_id, $this->_convertDecStr2AsciiStr($vpro_user_coupon->user_coupon_bit))
+                    ->set('coupon_isexisted_'.$user_id, $this->_convertDecStr2AsciiStr($vpro_user_coupon->user_coupon_isexisted_bit))
+                    ->exec();
+            } else {
                 $vpro_user_coupon->user_coupon_auth_id = $user_id;
                 $new_user_coupon_bit = $this->_newUserCouponBit();
                 $vpro_user_coupon->user_coupon_bit=$new_user_coupon_bit;
