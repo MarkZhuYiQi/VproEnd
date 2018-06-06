@@ -1,7 +1,7 @@
 <?php
 namespace app\controllers;
+use common\RedisInstance;
 use Yii;
-use yii\filters\auth\QueryParamAuth;
 use yii\filters\Cors;
 use yii\helpers\ArrayHelper;
 use yii\web\Controller;
@@ -18,7 +18,7 @@ class CombaseController extends Controller
         Yii::$app->user->enableSession=false;
         $this->enableCsrfValidation=false;
 //        $this->redis = Yii::$app->get('redis');
-        $this->redis = RedisController::connect();
+        $this->redis = RedisInstance::getRedis();
         $this->params = \Yii::$app->params;
         $this->request = \Yii::$app->request;
 //        header("Access-Control-Allow-Origin:http://127.0.0.1:8080");

@@ -8,6 +8,7 @@
 
 namespace api\controllers;
 
+use api\common\CouponApi;
 use app\controllers\IdController;
 use app\controllers\SnowflakeController;
 use app\controllers\VproController;
@@ -16,7 +17,6 @@ use app\models\VproCourses;
 use app\models\VproOrder;
 use app\models\VproOrderLogs;
 use app\models\VproOrderSub;
-use services\Order;
 use yii\db\Exception;
 
 Class ShoppingController extends ShoppingBaseController {
@@ -34,10 +34,11 @@ Class ShoppingController extends ShoppingBaseController {
 //        return $behaviors;
 //    }
     protected $redis;
+    protected $courseApi;
     function init(){
         $init = parent::init();
         $this->redis = \Yii::$app->get('redis');
-        return $init;
+        $this->courseApi = new CouponApi();
     }
     function actionUsercart(){
         
@@ -102,9 +103,9 @@ Class ShoppingController extends ShoppingBaseController {
         if(count($orderInfo)==0)return json_encode([]);
         try{
             //拿到所有课程的内容
-            $courses = $this->checkCourses($orderInfo['order_course_ids']);
+            $courses = $this->courseApi->checkCourses($orderInfo['order_course_ids']);
             //检查拿出来的课程是否和传递来的课程id一致
-            $consistency = $this->checkCoursesConsistency($orderInfo['order_course_ids'], $courses);
+            $consistency = $this->courseApi->checkCoursesConsistency($orderInfo['order_course_ids'], $courses);
             //检查课程一致性
             if(!$consistency['consistency'])
                 throw new Exception('courses did not matched with courses sent from front-side.', [], 21);

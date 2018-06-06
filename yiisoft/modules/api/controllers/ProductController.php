@@ -1,6 +1,7 @@
 <?php
 
 namespace api\controllers;
+use api\common\CourseApi;
 use api\controllers\ShoppingBaseController;
 use app\models\ModelFactory;
 use app\models\VproCourses;
@@ -9,7 +10,7 @@ use Yii;
 
 class ProductController extends ShoppingBaseController
 {
-
+    private $courseApi;
     public function actionTtt(){
 //        $res = $this->getCourseLessonList('1007');
         $res1 = $this->getCourseDetail('1007');
@@ -20,6 +21,8 @@ class ProductController extends ShoppingBaseController
     {
         parent::init();
         $this->enableCsrfValidation = false;
+        $this->courseApi = new CourseApi();
+
     }
     /**
      * 课程详细信息页面的信息请求
@@ -46,7 +49,7 @@ class ProductController extends ShoppingBaseController
         $request=\Yii::$app->request;
         $orderInfo=$request->bodyParams;
         if(count($orderInfo) === 0)return json_encode($this->returnInfo('courses not found', $this->params['COURSES_NOT_FOUND']));
-        $check_res = $this->checkCourses($orderInfo["order_course_ids"]);
+        $check_res = $this->courseApi->checkCourses($orderInfo["order_course_ids"]);
         return json_encode($this->returnInfo($check_res));
     }
 

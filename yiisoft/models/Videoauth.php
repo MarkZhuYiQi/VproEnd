@@ -2,7 +2,6 @@
 namespace app\models;
 use yii\db\ActiveRecord;
 use yii\web\IdentityInterface;
-use common\RedisData;
 class Videoauth extends ActiveRecord implements IdentityInterface {
     public static $current_user_id=0;
     public function emptyToken(){

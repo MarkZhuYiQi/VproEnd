@@ -1,6 +1,7 @@
 <?php
 
 namespace app\controllers;
+use common\RedisInstance;
 use yii\db\Exception;
 
 /**
@@ -37,7 +38,7 @@ class SnowflakeController{
     function __construct()
     {
 //        self::$redis=\Yii::$app->get('redis');
-        self::$redis = RedisController::connect();
+        self::$redis = RedisInstance::getRedis();
         self::$lastTimeStamp=self::$redis->get('order_id:timestamp');
     }
 

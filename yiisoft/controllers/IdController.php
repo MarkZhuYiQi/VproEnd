@@ -9,6 +9,7 @@
 namespace app\controllers;
 
 use app\models\ModelFactory;
+use common\RedisInstance;
 
 class IdController{
     private $pattern;
@@ -44,7 +45,7 @@ class IdController{
     }
     static function getOrderId($redis){
 //        $redis=\Yii::$app->get('redis');
-        $redis = RedisController::connect();
+        $redis = RedisInstance::getRedis();
         if(!$redis->exists('order_id') || $redis->lLen('order_id') <=0){
             self::genOrderIds($redis);
         }

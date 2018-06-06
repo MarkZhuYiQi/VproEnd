@@ -3,7 +3,6 @@ namespace app\myactions;
 use app\common\Common;
 use Yii;
 use yii\rest\Action;
-use common\RedisData;
 /*
  * 想法：
  * */

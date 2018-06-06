@@ -1,12 +1,8 @@
 <?php
 namespace app\controllers;
-use common\RedisData;
 use app\models\ModelFactory;
-use app\models\Customer;
 use Yii;
-use yii\base\Exception;
-use yii\web\Controller;
-use yii\web\UnauthorizedHttpException;
+
 
 class CategoryController extends CombaseController
 {
