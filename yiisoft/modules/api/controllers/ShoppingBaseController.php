@@ -1,5 +1,7 @@
 <?php
 namespace api\controllers;
+
+use app\common\LogHandler;
 use app\controllers\CombaseController;
 use app\controllers\SnowflakeController;
 use app\models\ModelFactory;
@@ -17,13 +19,15 @@ use Exception;
 class ShoppingBaseController extends CombaseController{
     protected $redis;
     protected $db;
+    protected $params;
+    protected $logHandler;
     function init()
     {
         parent::init();
         $this->redis = RedisInstance::getRedis() ? $this->redis : $this->returnInfo('database connect error!', 'REDIS_CONNECT_ERROR');
-//        $this->redis = \Yii::$app->get('redis');
         $this->db = \Yii::$app->db;
         $this->params = \Yii::$app->getModule('api')->params;
+        $this->logHandler = LogHandler::getLogHandler();
     }
     /**
      * 通过twitter雪花算法获得订单编号

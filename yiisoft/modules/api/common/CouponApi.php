@@ -91,6 +91,7 @@ class CouponApi {
      * @return array
      */
     function _getvalidCoupons($user_info, $coupon_id=false){
+        $coupon_id = $coupon_id > 0 ? $coupon_id : false;
         $this->redis->bitOp('AND', 'coupon_valid_'.$user_info['user_id'], 'coupon_'.$user_info['user_id'], 'coupon_isexisted_'.$user_info['user_id']);
         $coupon_valid_bit=$this->redis->get('coupon_valid_'.$user_info['user_id']);
         //获得优惠券id数组

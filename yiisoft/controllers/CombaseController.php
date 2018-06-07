@@ -57,7 +57,7 @@ class CombaseController extends Controller
         $body = [];
         foreach($keys as $k) {
             $body[$k] = $this->request->$method($k, false);
-            if ($body[$k] !== 0 && !$body[$k]) {
+            if ($body[$k] === false) {
                 return false;
             }
         }

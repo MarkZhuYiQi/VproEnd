@@ -36,18 +36,14 @@ class ProductController extends ShoppingBaseController
         if($course_id){
             $l_res = $this->getCourseLessonList($course_id);
             $d_res = $this->getCourseDetail($course_id);
+
             $c_res = $this->getCrumbnavbar($d_res['course_pid']);
             if(!count($l_res) || !count($d_res) || !count($c_res)){}
             return json_encode($this->returnInfo(['detail'=>$d_res, 'lesson_list'=>$l_res, 'crumb'=>$c_res]));
         }
     }
-    public function actionGetCrumb() {
-
-    }
-
     function actionCheckcourses(){
-        $request=\Yii::$app->request;
-        $orderInfo=$request->bodyParams;
+        $orderInfo = $this->request->bodyParams;
         if(count($orderInfo) === 0)return json_encode($this->returnInfo('courses not found', $this->params['COURSES_NOT_FOUND']));
         $check_res = $this->courseApi->checkCourses($orderInfo["order_course_ids"]);
         return json_encode($this->returnInfo($check_res));

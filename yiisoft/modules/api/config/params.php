@@ -44,4 +44,17 @@ return [
     // 优惠券：
     'COUPON_ACCOUNT_CREATE_FAILED'  =>  71001,
 
+    // 订单相关
+    'COURSE_FRONT_END_MISMATCH'                 =>  72021,
+    'COUPON_ENTRY_NOTEXIST_CREATD_FAILURE'      =>  72022,
+    'COUPON_NOTEXIST_USED'                      =>  72023,
+    'COUPON_DATE_MISMATCH'                      =>  72024,
+    'COUPON_LIMIT_MISMATCH'                     =>  72025,
+    'ORDER_PRICE_MINUS'                         =>  72026,
+    'ORDER_PRICE_MISMATCH_FRONT_END'            =>  72027,
+    'SUB_ORDER_INSERT_ERROR'                    =>  72028,
+
+    'CREATE_ORDER'                              =>  79000,
+
+
 ];
