@@ -1,6 +1,7 @@
 <?php
 namespace app\controllers;
 use app\models\ModelFactory;
+use common\RedisInstance;
 use Yii;
 
 
@@ -77,9 +78,9 @@ class CategoryController extends CombaseController
         $page = $request->get("p", 1);
         $nav_key = $request->get("category", 'index');
         $hash_name = "VproCourses_".$nav_key;
-        if($this->checkRedisKey($hash_name) && $this->checkRedisKey($hash_name, $page) && $this->checkExpired($hash_name)){
+        if(RedisInstance::checkRedisKey($hash_name) && RedisInstance::checkRedisKey($hash_name, $page) && RedisInstance::checkExpired($hash_name)){
             if($this->redis->hExists($hash_name, $page)) {
-                return json_encode($this->returnInfo(json_decode($this->hgetex($hash_name, $page)), $this->params['RETURN_SUCCESS']));
+                return json_encode($this->returnInfo(json_decode(RedisInstance::hgetex($hash_name, $page)), $this->params['RETURN_SUCCESS']));
             }
             // redis中没找到该分类下的对应页，可能是瞎传页码数据
             return json_encode($this->returnInfo("page not found", $this->params['PARAMS_ERROR']));
@@ -95,7 +96,7 @@ class CategoryController extends CombaseController
         $allNavs = implode(",",$allNavs);
         //获得该导航下所有课程
         if($this->_getCoursesInfo($nav_key, $allNavs)){
-            if($c_res=$this->hgetex($hash_name, $page)){
+            if($c_res=RedisInstance::hgetex($hash_name, $page)){
                 return json_encode($this->returnInfo(json_decode($c_res)));
             }
             // 数据库里也得不到对应的数据
@@ -236,11 +237,11 @@ QUERY;
             $pageRange = 40;
             $pageCount = ceil(count($res) / $pageRange);
             for ($i = 1; $i <= $pageCount; $i++) {
-                $this->hsetex($database . "_" . $nav_key, $i, $this->expired_time(0,0), json_encode(array_slice($res, ($i - 1) * $pageRange, $pageRange)));
+                RedisInstance::hsetex($database . "_" . $nav_key, $i, RedisInstance::expired_time(0,0), json_encode(array_slice($res, ($i - 1) * $pageRange, $pageRange)));
             }
             return true;
         }
-        $this->hsetex($database . "_" . $nav_key, 1, $this->expired_time(0,0), '');
+        RedisInstance::hsetex($database . "_" . $nav_key, 1, RedisInstance::expired_time(0,0), '');
         return false;
     }
 }

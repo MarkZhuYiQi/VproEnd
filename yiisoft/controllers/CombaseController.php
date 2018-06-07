@@ -48,8 +48,9 @@ class CombaseController extends Controller
         return $behaviors;
     }
     function returnInfo($data, $return_status='RETURN_SUCCESS') {
+        $code = is_numeric($return_status) ? $return_status : $this->params[$return_status];
         return [
-            'code' => $this->params[$return_status],
+            'code' => $code,
             'data' => $data
         ];
     }
@@ -102,71 +103,71 @@ class CombaseController extends Controller
     }
 
 
-    //超时时间存放key时的后缀
-    const EXPIRED_KEY_SUFFIX = '_expired';
-
-    /**
-     * 过期时间，默认传入时间是分钟
-     * @param int $min
-     * @param int $max
-     * @return int
-     */
-    protected function expired_time($min=0, $max=0){
-        return time() + rand($min*3600, $max*3600);
-    }
-
-    /**
-     * 判断key是否存在
-     * @param $key
-     * @param bool $database
-     * @return bool
-     */
-    public function checkRedisKey($key, $database=false){
-        if(!$database){
-            return $this->redis->exists($key);
-        }else{
-            return $this->redis->exists($database) && $this->redis->hExists($database, $key);
-        }
-    }
-
-    /**
-     * 判断key是否过期, 过期返回false，可以使用返回true
-     * @param $key
-     * @param bool $database
-     * @return bool
-     */
-    public function checkExpired($key, $database=false){
-        if(!$database){
-            return $this->redis->ttl($key.self::EXPIRED_KEY_SUFFIX) < time();
-        }else{
-            return $this->redis->hGet($database.self::EXPIRED_KEY_SUFFIX, $key) < time();
-        }
-    }
-
-    /**
-     * hash表设置键值对带上过期功能
-     * @param $database
-     * @param $key
-     * @param $expire_time
-     * @param $value
-     */
-    public function hsetex($database, $key, $expire_time, $value){
-        $this->redis->hSet($database, $key, $value);
-        $this->redis->hSet($database.self::EXPIRED_KEY_SUFFIX, $key, time()+$expire_time);
-    }
-
-    /**
-     * 获得带过期时间的哈希表键值对
-     * @param $database
-     * @param $key
-     * @return bool
-     */
-    public function hgetex($database, $key){
-        $expired_time = $this->redis->hGet($database.self::EXPIRED_KEY_SUFFIX, $key);
-        if(time() < $expired_time && $this->checkRedisKey($key, $database)){
-            return $this->redis->hGet($database, $key);
-        }
-        $this->redis->hSet($database, $key, '');
-        return false;
-    }
+//    //超时时间存放key时的后缀
+//    const EXPIRED_KEY_SUFFIX = '_expired';
+//
+//    /**
+//     * 过期时间，默认传入时间是分钟
+//     * @param int $min
+//     * @param int $max
+//     * @return int
+//     */
+//    protected function expired_time($min=0, $max=0){
+//        return time() + rand($min*3600, $max*3600);
+//    }
+//
+//    /**
+//     * 判断key是否存在
+//     * @param $key
+//     * @param bool $database
+//     * @return bool
+//     */
+//    public function checkRedisKey($key, $database=false){
+//        if(!$database){
+//            return $this->redis->exists($key);
+//        }else{
+//            return $this->redis->exists($database) && $this->redis->hExists($database, $key);
+//        }
+//    }
+//
+//    /**
+//     * 判断key是否过期, 过期返回false，可以使用返回true
+//     * @param $key
+//     * @param bool $database
+//     * @return bool
+//     */
+//    public function checkExpired($key, $database=false){
+//        if(!$database){
+//            return $this->redis->ttl($key.self::EXPIRED_KEY_SUFFIX) < time();
+//        }else{
+//            return $this->redis->hGet($database.self::EXPIRED_KEY_SUFFIX, $key) < time();
+//        }
+//    }
+//
+//    /**
+//     * hash表设置键值对带上过期功能
+//     * @param $database
+//     * @param $key
+//     * @param $expire_time
+//     * @param $value
+//     */
+//    public function hsetex($database, $key, $expire_time, $value){
+//        $this->redis->hSet($database, $key, $value);
+//        $this->redis->hSet($database.self::EXPIRED_KEY_SUFFIX, $key, time()+$expire_time);
+//    }
+//
+//    /**
+//     * 获得带过期时间的哈希表键值对
+//     * @param $database
+//     * @param $key
+//     * @return bool
+//     */
+//    public function hgetex($database, $key){
+//        $expired_time = $this->redis->hGet($database.self::EXPIRED_KEY_SUFFIX, $key);
+//        if(time() < $expired_time && $this->checkRedisKey($key, $database)){
+//            return $this->redis->hGet($database, $key);
+//        }
+//        $this->redis->hSet($database, $key, '');
+//        return false;
+//    }
 }

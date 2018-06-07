@@ -1,5 +1,6 @@
 <?php
 namespace app\controllers;
+use common\RedisInstance;
 use Yii;
 
 class VproController extends CombaseController
@@ -13,12 +14,7 @@ class VproController extends CombaseController
         $this->enableCsrfValidation=false;
     }
     public function actionVpro(){
-
         exit();
-
-        $res=$this->redis->getAll('VproIndex');
-//        var_export($res);
-        return json_encode($res);
     }
 
 
@@ -55,7 +51,7 @@ class VproController extends CombaseController
         //获得导航原始数据
         $res = json_decode($this->redis->get("VproNavbar"));
         //获得当前指定项目的子导航
-        if(!$this->hgetex('VproIndexNavs', $nav_key)){
+        if(!RedisInstance::hgetex('VproIndexNavs', $nav_key)){
             //拿到所有子导航
             $request_nav = $this->_getSubNavs($res, $nav_id);
             //根据每个子导航的id找出其下的所有子导航id编号，组成数组，用于辨别身份
@@ -63,10 +59,10 @@ class VproController extends CombaseController
 
             if($nav_id==9999||isset($request_nav->children)){
                 //将次级导航json写入到redis
-                $this->hsetex("VproIndexNavs",$nav_key,$this->expired_time(0,0),json_encode($request_nav));
+                RedisInstance::hsetex("VproIndexNavs",$nav_key,RedisInstance::expired_time(0,0),json_encode($request_nav));
             }
         }
-        if(!$this->hgetex("VproIndexCourses", $nav_id)){
+        if(!RedisInstance::hgetex("VproIndexCourses", $nav_id)){
             foreach($this->_getSubNav($this->_getSubNavs($res, $nav_id)) as $v){
                 //当前子导航分支下的子导航对象(包括自己)
                 $res_nav = $this->_getSubNavs($res, $v->nav_id);
@@ -80,8 +76,8 @@ class VproController extends CombaseController
             $this->_getIndexCoursesInfo($nav_id, $indexSubNavs);
         }
         $index = [];
-        $index['nav'] = json_decode($this->hgetex("VproIndexNavs", $nav_key));
-        $index['courses'] = json_decode($this->hgetex("VproIndexCourses", $nav_id));
+        $index['nav'] = json_decode(RedisInstance::hgetex("VproIndexNavs", $nav_key));
+        $index['courses'] = json_decode(RedisInstance::hgetex("VproIndexCourses", $nav_id));
         return json_encode($this->returnInfo($index));
     }
 
@@ -92,9 +88,9 @@ class VproController extends CombaseController
         $page = $request->get("p", 1);
         $nav_key = $request->get("category", 'index');
         $hash_name = "VproCourses_".$nav_key;
-        if($this->checkRedisKey($hash_name) && $this->checkRedisKey($hash_name, $page) && $this->checkExpired($hash_name)){
+        if(RedisInstance::checkRedisKey($hash_name) && RedisInstance::checkRedisKey($hash_name, $page) && RedisInstance::checkExpired($hash_name)){
             if($this->redis->hExists($hash_name, $page)) {
-                return json_encode($this->returnInfo(json_decode($this->hgetex($hash_name, $page)), $this->params['RETURN_SUCCESS']));
+                return json_encode($this->returnInfo(json_decode(RedisInstance::hgetex($hash_name, $page)), $this->params['RETURN_SUCCESS']));
             }
             // redis中没找到该分类下的对应页，可能是瞎传页码数据
             return json_encode($this->returnInfo("page not found", $this->params['PARAMS_ERROR']));
@@ -110,7 +106,7 @@ class VproController extends CombaseController
         $allNavs = implode(",",$allNavs);
         //获得该导航下所有课程
         if($this->_getCoursesInfo($nav_key, $allNavs)){
-            if($c_res=$this->hgetex($hash_name, $page)){
+            if($c_res=RedisInstance::hgetex($hash_name, $page)){
                 return json_encode($this->returnInfo(json_decode($c_res)));
             }
             // 数据库里也得不到对应的数据
@@ -257,7 +253,7 @@ QUERY;
                 $indexNavCourses[$key]=$res;
         }
         $database = 'VproIndexCourses';
-        $this->hsetex($database, $nav_key, $this->expired_time(0,0) ,json_encode($indexNavCourses));
+        RedisInstance::hsetex($database, $nav_key, RedisInstance::expired_time(0,0) ,json_encode($indexNavCourses));
     }
 
     /**
@@ -301,11 +297,11 @@ QUERY;
             $pageRange = 40;
             $pageCount = ceil(count($res) / $pageRange);
             for ($i = 1; $i <= $pageCount; $i++) {
-                $this->hsetex($database . "_" . $nav_key, $i, $this->expired_time(0,0), json_encode(array_slice($res, ($i - 1) * $pageRange, $pageRange)));
+                RedisInstance::hsetex($database . "_" . $nav_key, $i, RedisInstance::expired_time(0,0), json_encode(array_slice($res, ($i - 1) * $pageRange, $pageRange)));
             }
             return true;
         }
-        $this->hsetex($database . "_" . $nav_key, 1, $this->expired_time(0,0), '');
+        RedisInstance::hsetex($database . "_" . $nav_key, 1, RedisInstance::expired_time(0,0), '');
         return false;
     }
 }

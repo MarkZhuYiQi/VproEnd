@@ -4,10 +4,7 @@ namespace api\controllers;
 use app\common\LogHandler;
 use app\controllers\CombaseController;
 use app\controllers\SnowflakeController;
-use app\models\ModelFactory;
-use app\models\VproCourses;
 use common\RedisInstance;
-use Exception;
 
 /**
  * Created by PhpStorm.
@@ -59,65 +56,65 @@ class ShoppingBaseController extends CombaseController{
         return 'order_id';
     }
 
-    /**
-     * ----------------------------------------------------------------------------------------------------------------
-     * Course Check
-     *-----------------------------------------------------------------------------------------------------------------
-     */
-
-    /**
-     * 传入id，返回课程相关信息，注意：这里id如果不存在不会报错而是忽略
-     * @param $course_ids
-     * 传入数组，课程ids，先去redis查看课程是否存在并且不是空字符串，放入新数组；
-     * 如果没找到，去数据库找，找到了就写入redis并返回给新数组， 没找到就往redis写入一个空字符串，防止缓存穿透
-     * @return array $check_res 返回一个包含所有传入课程id的数组
-     *
-     * 这个空字符串需要定时清理
-     *
-     */
-    protected function checkCourses($course_ids){
-        $check_res=[];
-        foreach($course_ids as $v){
-            $redis_str= $this->redis->hGet('VproCourses', $v);
-            if($redis_str === null || $redis_str === ""){
-                $res = VproCourses::_getDetail($v);
-                if($res){
-//                    $this->redis->hset("VproCourses", $v, json_encode($res));
-                    array_push($check_res, $res);
-                }else{
-                    //这里后台需要准备一个程序，定时运行检查hash中的空字符串，找到就删除字段
-                    if($redis_str === null)$this->redis->hSet("VproCourses", $v, "");
-                }
-            }else{
-                $res=json_decode($redis_str);
-                array_push($check_res, $res);
-            }
-        }
-        return $check_res;
-    }
-    /**
-     * 检查课程id数组和实际返回数组一致性
-     * @param $course_ids
-     * @param $courses
-     * @return $res
-     * 返回格式：["difference"=>[xxx,xxx,xxx],"consistency"=>true|false]
-     */
-    protected function checkCoursesConsistency($course_ids, $courses){
-        $res=[];
-        foreach($courses as $item){
-            if(!in_array($item->course_id, $course_ids)){
-                array_push($res['difference'],$item->course_id);
-            }
-        }
-        if(count($res)>0){
-            //存在difference成员，说明不一致
-            $res['consistency']=false;
-            return $res;
-        }
-        //difference成员存在，说明一致
-        $res['consistency']=true;
-        return $res;
-    }
+//    /**
+//     * ----------------------------------------------------------------------------------------------------------------
+//     * Course Check
+//     *-----------------------------------------------------------------------------------------------------------------
+//     */
+//
+//    /**
+//     * 传入id，返回课程相关信息，注意：这里id如果不存在不会报错而是忽略
+//     * @param $course_ids
+//     * 传入数组，课程ids，先去redis查看课程是否存在并且不是空字符串，放入新数组；
+//     * 如果没找到，去数据库找，找到了就写入redis并返回给新数组， 没找到就往redis写入一个空字符串，防止缓存穿透
+//     * @return array $check_res 返回一个包含所有传入课程id的数组
+//     *
+//     * 这个空字符串需要定时清理
+//     *
+//     */
+//    protected function checkCourses($course_ids){
+//        $check_res=[];
+//        foreach($course_ids as $v){
+//            $redis_str= $this->redis->hGet('VproCourses', $v);
+//            if($redis_str === null || $redis_str === ""){
+//                $res = VproCourses::_getDetail($v);
+//                if($res){
+////                    $this->redis->hset("VproCourses", $v, json_encode($res));
+//                    array_push($check_res, $res);
+//                }else{
+//                    //这里后台需要准备一个程序，定时运行检查hash中的空字符串，找到就删除字段
+//                    if($redis_str === null)$this->redis->hSet("VproCourses", $v, "");
+//                }
+//            }else{
+//                $res=json_decode($redis_str);
+//                array_push($check_res, $res);
+//            }
+//        }
+//        return $check_res;
+//    }
+//    /**
+//     * 检查课程id数组和实际返回数组一致性
+//     * @param $course_ids
+//     * @param $courses
+//     * @return $res
+//     * 返回格式：["difference"=>[xxx,xxx,xxx],"consistency"=>true|false]
+//     */
+//    protected function checkCoursesConsistency($course_ids, $courses){
+//        $res=[];
+//        foreach($courses as $item){
+//            if(!in_array($item->course_id, $course_ids)){
+//                array_push($res['difference'],$item->course_id);
+//            }
+//        }
+//        if(count($res)>0){
+//            //存在difference成员，说明不一致
+//            $res['consistency']=false;
+//            return $res;
+//        }
+//        //difference成员存在，说明一致
+//        $res['consistency']=true;
+//        return $res;
+//    }
 //    /**
 //     * ----------------------------------------------------------------------------------------------------------
 //     * coupon check && modify
@@ -268,60 +265,60 @@ class ShoppingBaseController extends CombaseController{
 //        }
 //        return $coupon_ids;
 //    }
-    /**
-     * -----------------------------------------------------------------------------------------------------------
-     * cartController
-     * -----------------------------------------------------------------------------------------------------------
-     */
-    /**
-     * 根据提供的detail信息删除购物车对应信息
-     * detail格式：
-     * ['is_login'=>true|false,'cart_userid'=>xx,'cart_detail'=>[]]
-     * @param $detail
-     * @return string
-     */
-    function delCartDetail($detail){
-        $vproCartDetail = ModelFactory::loadModel('vpro_cart_detail');
-        $transaction = $vproCartDetail::getDb()->beginTransaction();
-        try{
-            if(!count($detail["cart_detail"])>0)throw new \Exception("could not delete the cart products due to lack of cart_detail.");
-            foreach($detail["cart_detail"] as $v){
-                if($record = $vproCartDetail::findOne(['cart_course_id'=>$v['cart_course_id'], 'cart_parent_id'=>$v['cart_parent_id']])){
-                    $cart_name = $detail['is_login']?"cart".$detail['cart_userid']:'cookiecart'.$detail['cart_id'];
-                    $res=$record->delete();
-                    if($res){
-                        $res = $this->redis->sMembers($cart_name);
-                        foreach($res as $key =>$value){
-                            if(json_decode($value)->cart_course_id==$v['cart_course_id']){
-                                $this->redis->sRem($cart_name, $value);
-                            }
-                        }
-                        $transaction->commit();
-                        return json_encode(["status"=>true, "course_id"=>$v["cart_course_id"]]);
-                    }else{
-                        $transaction->rollBack();
-                        return json_encode(["status"=>false]);
-                    }
-                }
-            }
-        }catch(Exception $e){
-
-        }
-    }
-    /**
-     * @param $course_id
-     * @return array|\yii\db\ActiveRecord[]
-     * 获得课程下的详细课时列表
-     */
-    public function getCourseLessonList($course_id){
-        if(!$this->checkRedisKey($course_id, 'VproLessonsList')) {
-            $vproCourseLessonList = ModelFactory::loadModel('vpro_courses_lesson_list');
-            $l_res = $vproCourseLessonList::find()->where(['lesson_course_id'=>$course_id])->asArray()->all();
-            $this->hsetex('VproLessonsList', $course_id, $this->expired_time(60*12, 60*24), json_encode($l_res));
-        } else {
-            $l_res = json_decode($this->hgetex('VproLessonsList', $course_id));
-        }
-        return $l_res;
-    }
+//    /**
+//     * -----------------------------------------------------------------------------------------------------------
+//     * cartController
+//     * -----------------------------------------------------------------------------------------------------------
+//     */
+//    /**
+//     * 根据提供的detail信息删除购物车对应信息
+//     * detail格式：
+//     * ['is_login'=>true|false,'cart_userid'=>xx,'cart_detail'=>[]]
+//     * @param $detail
+//     * @return string
+//     */
+//    function delCartDetail($detail){
+//        $vproCartDetail = ModelFactory::loadModel('vpro_cart_detail');
+//        $transaction = $vproCartDetail::getDb()->beginTransaction();
+//        try{
+//            if(!count($detail["cart_detail"])>0)throw new \Exception("could not delete the cart products due to lack of cart_detail.");
+//            foreach($detail["cart_detail"] as $v){
+//                if($record = $vproCartDetail::findOne(['cart_course_id'=>$v['cart_course_id'], 'cart_parent_id'=>$v['cart_parent_id']])){
+//                    $cart_name = $detail['is_login']?"cart".$detail['cart_userid']:'cookiecart'.$detail['cart_id'];
+//                    $res=$record->delete();
+//                    if($res){
+//                        $res = $this->redis->sMembers($cart_name);
+//                        foreach($res as $key =>$value){
+//                            if(json_decode($value)->cart_course_id==$v['cart_course_id']){
+//                                $this->redis->sRem($cart_name, $value);
+//                            }
+//                        }
+//                        $transaction->commit();
+//                        return json_encode(["status"=>true, "course_id"=>$v["cart_course_id"]]);
+//                    }else{
+//                        $transaction->rollBack();
+//                        return json_encode(["status"=>false]);
+//                    }
+//                }
+//            }
+//        }catch(Exception $e){
+//
+//        }
+//    }
+//    /**
+//     * @param $course_id
+//     * @return array|\yii\db\ActiveRecord[]
+//     * 获得课程下的详细课时列表
+//     */
+//    public function getCourseLessonList($course_id){
+//        if(!$this->checkRedisKey($course_id, 'VproLessonsList')) {
+//            $vproCourseLessonList = ModelFactory::loadModel('vpro_courses_lesson_list');
+//            $l_res = $vproCourseLessonList::find()->where(['lesson_course_id'=>$course_id])->asArray()->all();
+//            $this->hsetex('VproLessonsList', $course_id, $this->expired_time(60*12, 60*24), json_encode($l_res));
+//        } else {
+//            $l_res = json_decode(RedisInstance::hgetex('VproLessonsList', $course_id));
+//        }
+//        return $l_res;
+//    }
 
 }

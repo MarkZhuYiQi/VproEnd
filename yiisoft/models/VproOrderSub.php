@@ -12,4 +12,16 @@ class VproOrderSub extends ActiveRecord{
     {
         return 'vpro_order_sub';
     }
+    public function scenarios()
+    {
+        return [
+            'add'  =>  ['order_id', 'course_id', 'course_price']
+        ];
+    }
+    public function rules()
+    {
+        return [
+            [['order_id', 'course_id', 'course_price'], 'required', 'on' => 'add']
+        ];
+    }
 }

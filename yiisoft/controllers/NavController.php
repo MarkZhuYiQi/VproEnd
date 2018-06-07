@@ -1,6 +1,7 @@
 <?php
 namespace app\controllers;
 use app\models\ModelFactory;
+use common\RedisInstance;
 use Yii;
 
 class NavController extends CombaseController
@@ -26,7 +27,7 @@ class NavController extends CombaseController
         //获得导航原始数据
         $res = json_decode($this->redis->get("VproNavbar"));
         //获得当前指定项目的子导航
-        if(!$this->hgetex('VproIndexNavs', $nav_key)){
+        if(!RedisInstance::hgetex('VproIndexNavs', $nav_key)){
             //拿到所有子导航
             $request_nav = $this->_getSubNavs($res, $nav_id);
             //根据每个子导航的id找出其下的所有子导航id编号，组成数组，用于辨别身份
@@ -34,10 +35,10 @@ class NavController extends CombaseController
 
             if($nav_id==9999||isset($request_nav->children)){
                 //将次级导航json写入到redis
-                $this->hsetex("VproIndexNavs",$nav_key,$this->expired_time(0,0),json_encode($request_nav));
+                RedisInstance::hsetex("VproIndexNavs",$nav_key,RedisInstance::expired_time(0,0),json_encode($request_nav));
             }
         }
-        if(!$this->hgetex("VproIndexCourses", $nav_id)){
+        if(!RedisInstance::hgetex("VproIndexCourses", $nav_id)){
             foreach($this->_getSubNav($this->_getSubNavs($res, $nav_id)) as $v){
                 //当前子导航分支下的子导航对象(包括自己)
                 $res_nav = $this->_getSubNavs($res, $v->nav_id);
@@ -51,8 +52,8 @@ class NavController extends CombaseController
             $this->_getIndexCoursesInfo($nav_id, $indexSubNavs);
         }
         $index = [];
-        $index['nav'] = json_decode($this->hgetex("VproIndexNavs", $nav_key));
-        $index['courses'] = json_decode($this->hgetex("VproIndexCourses", $nav_id));
+        $index['nav'] = json_decode(RedisInstance::hgetex("VproIndexNavs", $nav_key));
+        $index['courses'] = json_decode(RedisInstance::hgetex("VproIndexCourses", $nav_id));
         return json_encode($this->returnInfo($index));
     }
 
@@ -245,6 +246,6 @@ QUERY;
                 $indexNavCourses[$key]=$res;
         }
         $database = 'VproIndexCourses';
-        $this->hsetex($database, $nav_key, $this->expired_time(0,0) ,json_encode($indexNavCourses));
+        RedisInstance::hsetex($database, $nav_key, RedisInstance::expired_time(0,0) ,json_encode($indexNavCourses));
     }
 }

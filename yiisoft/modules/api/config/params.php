@@ -44,6 +44,10 @@ return [
     // 优惠券：
     'COUPON_ACCOUNT_CREATE_FAILED'  =>  71001,
 
+    //购物车
+    'CART_COURSES_DELETE_LOST'      =>    73001,
+
+
     // 订单相关
     'COURSE_FRONT_END_MISMATCH'                 =>  72021,
     'COUPON_ENTRY_NOTEXIST_CREATD_FAILURE'      =>  72022,
@@ -55,6 +59,7 @@ return [
     'SUB_ORDER_INSERT_ERROR'                    =>  72028,
 
     'CREATE_ORDER'                              =>  79000,
+    'DEL_CART_ITEM'                             =>  79019,
 
 
 ];

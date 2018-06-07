@@ -3,6 +3,7 @@ namespace api\controllers;
 use api\controllers\ShoppingBaseController;
 use app\models\ModelFactory;
 use app\models\VproComment;
+use common\RedisInstance;
 use Yii;
 
 class CommentController extends ShoppingBaseController
@@ -83,7 +84,7 @@ class CommentController extends ShoppingBaseController
             $comments = 'VproComment_' . $body['lesson_id'];
             $comments_start = $this->params['COMMENTS_COUNT'] * ($body['p'] - 1);
             $comments_end = $this->params['COMMENTS_COUNT'] * $body['p'];
-            if (!$this->checkRedisKey($comments_push_list) || !$this->checkRedisKey($comments)) {
+            if (!RedisInstance::checkRedisKey($comments_push_list) || !RedisInstance::checkRedisKey($comments)) {
                 $res = VproComment::find()
                     ->select(['vpro_comment.*','vpro_auth.auth_appid'])
                     ->where(['vpro_comment_lesson_id' => $body['lesson_id']])
