@@ -2,6 +2,7 @@
 namespace api\controllers;
 use api\common\CartApi;
 use app\models\ModelFactory;
+use app\models\VproCart;
 
 /**
  * Created by PhpStorm.
@@ -15,9 +16,8 @@ class CartController extends ShoppingBaseController {
         parent::init();
         $this->cartApi = new CartApi();
     }
-    function actionTest(){
-        $res=$this->cartApi->getDetailInfo(['cart_course_id'=>1007]);
-        var_export($res);
+    function actionTest() {
+        var_export(VproCart::find()->select(['cart_id'])->where(['cart_userid' => 33])->asArray()->all());
     }
     function actionAddcartdetail()
     {
@@ -41,24 +41,41 @@ class CartController extends ShoppingBaseController {
     function actionUsercart()
     {
         $body = $this->request->bodyParams;
+        $cartId = -1;
         if (isset($body['cart_cookieid'])) {
             // cookiecart[]
             $id = "cookiecart" . $body['cart_cookieid'];
         } elseif (isset($body['cart_userid'])) {
             // cart[]
             $id = "cart" . $body['cart_userid'];
+            // 设置redis hash表中的cart_id
+            // usercart:[user_id]->[cart_id]
+            if(($cartId = $this->redis->hGet('usercart', $body['cart_userid'])) === false)
+            {
+                $vproCart = new VproCart();
+                $res = $vproCart::find()->select(['cart_id'])->where(['cart_userid' => $body['cart_userid']])->asArray()->one();
+                if(count($res) === 0) {
+                    $cartId = -1;
+                } else {
+                    $cartId = $res['cart_id'];
+                }
+                $this->redis->hSet('usercart', $body['cart_userid'], $cartId);
+            }
         } else {
             // 传输错误
             return json_encode($this->returnInfo('params missing', $this->params['PARAMS_ERROR']));
         }
         $cartInfo = [];
+        // 如果有条目，放到购物车信息中
         if ($this->redis->keys($id)) {
             foreach($this->redis->sMembers($id) as $value) {
                 array_push($cartInfo, json_decode($value));
             }
-            return json_encode($this->returnInfo($cartInfo));
         }
-        return json_encode($this->returnInfo([]));
+        return json_encode($this->returnInfo([
+            'cartInfo'  =>  $cartInfo,
+            'cartId'    =>  $cartId
+        ]));
     }
 
     /**
@@ -69,24 +86,23 @@ class CartController extends ShoppingBaseController {
     {
         $request = $this->request;
         $cart_ref = $request->bodyParams;
-        if (count($cart_ref) == 0) return json_encode($this->returnInfo('unknown products!', 'CART_ADD_PRODUCT_ERROR'));
-        $vproCart = ModelFactory::loadModel('vpro_cart');
-        $cart = $vproCart::findOne(['cart_id' => $cart_ref['cart_id']]);
-        // 如果购物车主信息存在
-        if ($cart) {
-            $payment = $this->cartApi->addCartdetail($cart_ref, $cart->cart_payment);
-            return $cart->save();
-        } else {
-            // 购物车本来不存在
-            $payment = $this->cartApi->addCartDetail($cart_ref);
-            $vproCart = ModelFactory::loadModel('vpro_cart');
-            $vproCart->cart_id = $cart_ref['cart_id'];
-            $vproCart->cart_userid = $cart_ref['cart_userid'];
-            $vproCart->cart_payment = $payment;
-            $vproCart->cart_status = 1;
-            $vproCart->cart_addtime = time();
-            return $vproCart->save();
+        if (count($cart_ref['cart_detail']) === 0) return json_encode($this->returnInfo('unknown products!', 'CART_ADD_PRODUCT_ERROR'));
+        if ($cart_ref['cart_is_existed'] === 0) {
+            $res = $this->createUserCart($cart_ref);
+            if(!$res)return json_encode($this->returnInfo('create cart info error', $this->params['CART_CREATE_ERROR']));
         }
+        $payment = $this->cartApi->addCartdetail($cart_ref);
+        return $payment ? json_encode($this->returnInfo(true)) : json_encode($this->returnInfo('save cart error', $this->params['CART_ITEM_SAVE_ERROR']));
     }
 
+    function createUserCart($cart_ref) {
+        $vproCart = new VproCart();
+        $vproCart->cart_id = $cart_ref['cart_id'];
+        $vproCart->cart_userid = $cart_ref['cart_userid'];
+        $vproCart->cart_status = 1;
+        $vproCart->cart_addtime = time();
+        $this->redis->hSet('usercart', $cart_ref['cart_userid'], $cart_ref['cart_id']);
+        return $vproCart->save();
+
+    }
 }

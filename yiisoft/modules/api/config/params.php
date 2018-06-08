@@ -45,8 +45,10 @@ return [
     'COUPON_ACCOUNT_CREATE_FAILED'  =>  71001,
 
     //购物车
-    'CART_COURSES_DELETE_LOST'      =>    73001,
-    'CART_ADD_PRODUCT_ERROR'        =>    73002,
+    'CART_COURSES_DELETE_LOST'      =>          73001,
+    'CART_ADD_PRODUCT_ERROR'        =>          73002,
+    'CART_ITEM_SAVE_ERROR'          =>          73003,
+    'CART_CREATE_ERROR'             =>          73004,
 
 
     // 订单相关

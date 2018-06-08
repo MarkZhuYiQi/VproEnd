@@ -60,38 +60,32 @@ class CartApi{
             return false;
         }
     }
-    function addCartDetail($detail, $payment=0)
+    function addCartDetail($detail)
     {
 
         $vproCartDetail = new VproCartDetail();
         $transaction = $vproCartDetail::getDb()->beginTransaction();
         try {
-            if ($detail) {
-                if (count($detail['cart_detail']) > 0) {
-                    foreach ($detail['cart_detail'] as $v) {
-                        if (!$vproCartDetail::findOne(["cart_course_id" => $v['cart_course_id'], "cart_parent_id" => $detail['cart_id']])) {
-                            $vproCartDetail->cart_parent_id = $detail['cart_id'];
-                            $vproCartDetail->cart_course_id = $v['cart_course_id'];
-                            $vproCartDetail->cart_add_time = time();
-                            if (isset($v['cart_is_cookie'])) $vproCartDetail->cart_is_cookie = $v["cart_is_cookie"];
-                            $vproCartDetail->save();
-                            $detailInfo = $this->getDetailInfo($v);
-                            if (key_exists("cart_userid", $detail)) {
-                                $this->redis->sAdd("cart" . $detail["cart_userid"], json_encode($detailInfo));
-                            } else {
-                                $this->redis->sAdd("cookiecart" . $detail["cart_id"], json_encode($detailInfo));
-                            }
-                            $payment = $payment + $detailInfo['cart_course_price'];
-                        }
+            foreach ($detail['cart_detail'] as $v) {
+                if (!$vproCartDetail::findOne(["cart_course_id" => $v['cart_course_id'], "cart_parent_id" => $detail['cart_id']])) {
+                    $vproCartDetail->cart_parent_id = $detail['cart_id'];
+                    $vproCartDetail->cart_course_id = $v['cart_course_id'];
+                    $vproCartDetail->cart_add_time = time();
+                    if (isset($v['cart_is_cookie'])) $vproCartDetail->cart_is_cookie = $v["cart_is_cookie"];
+                    $vproCartDetail->save();
+                    $detailInfo = $this->getDetailInfo($v);
+                    if (key_exists("cart_userid", $detail)) {
+                        $this->redis->sAdd("cart" . $detail["cart_userid"], json_encode($detailInfo));
+                    } else {
+                        $this->redis->sAdd("cookiecart" . $detail["cart_id"], json_encode($detailInfo));
                     }
-                    $transaction->commit();
-                } else {
-                    $transaction->rollBack();
                 }
             }
-            return $payment;
-        } catch (Exception $e) {
-            var_export($e);
+            $transaction->commit();
+            return true;
+        }catch (Exception $e) {
+            $transaction->rollBack();
+            return false;
         }
     }
     /**
