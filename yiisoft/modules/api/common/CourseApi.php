@@ -7,6 +7,7 @@
  */
 namespace api\common;
 
+use app\models\ModelFactory;
 use app\models\VproCourses;
 use common\RedisInstance;
 
@@ -74,5 +75,20 @@ class CourseApi{
         //difference成员存在，说明一致
         $res['consistency']=true;
         return $res;
+    }
+    /**
+     * @param $course_id
+     * @return array|\yii\db\ActiveRecord[]
+     * 获得课程下的详细课时列表
+     */
+    public function getCourseLessonList($course_id){
+        if(!RedisInstance::checkRedisKey($course_id, 'VproLessonsList')) {
+            $vproCourseLessonList = ModelFactory::loadModel('vpro_courses_lesson_list');
+            $l_res = $vproCourseLessonList::find()->where(['lesson_course_id'=>$course_id])->asArray()->all();
+            RedisInstance::hsetex('VproLessonsList', $course_id, RedisInstance::expired_time(60*12, 60*24), json_encode($l_res));
+        } else {
+            $l_res = json_decode(RedisInstance::hgetex('VproLessonsList', $course_id));
+        }
+        return $l_res;
     }
 }

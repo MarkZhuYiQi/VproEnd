@@ -46,6 +46,7 @@ return [
 
     //购物车
     'CART_COURSES_DELETE_LOST'      =>    73001,
+    'CART_ADD_PRODUCT_ERROR'        =>    73002,
 
 
     // 订单相关

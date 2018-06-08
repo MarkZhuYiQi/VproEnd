@@ -34,7 +34,7 @@ class ProductController extends ShoppingBaseController
         $request = Yii::$app->request;
         $course_id = $request->get("cid", false);
         if($course_id){
-            $l_res = $this->getCourseLessonList($course_id);
+            $l_res = $this->courseApi->getCourseLessonList($course_id);
             $d_res = $this->getCourseDetail($course_id);
 
             $c_res = $this->getCrumbnavbar($d_res['course_pid']);

@@ -9,6 +9,8 @@ namespace api\common;
 
 use app\common\LogHandler;
 use app\models\ModelFactory;
+use app\models\VproCartDetail;
+use app\models\VproCourses;
 use common\RedisInstance;
 use Exception;
 
@@ -58,19 +60,64 @@ class CartApi{
             return false;
         }
     }
-    /**
-     * @param $course_id
-     * @return array|\yii\db\ActiveRecord[]
-     * 获得课程下的详细课时列表
-     */
-    public function getCourseLessonList($course_id){
-        if(!RedisInstance::checkRedisKey($course_id, 'VproLessonsList')) {
-            $vproCourseLessonList = ModelFactory::loadModel('vpro_courses_lesson_list');
-            $l_res = $vproCourseLessonList::find()->where(['lesson_course_id'=>$course_id])->asArray()->all();
-            RedisInstance::hsetex('VproLessonsList', $course_id, RedisInstance::expired_time(60*12, 60*24), json_encode($l_res));
-        } else {
-            $l_res = json_decode(RedisInstance::hgetex('VproLessonsList', $course_id));
+    function addCartDetail($detail, $payment=0)
+    {
+
+        $vproCartDetail = new VproCartDetail();
+        $transaction = $vproCartDetail::getDb()->beginTransaction();
+        try {
+            if ($detail) {
+                if (count($detail['cart_detail']) > 0) {
+                    foreach ($detail['cart_detail'] as $v) {
+                        if (!$vproCartDetail::findOne(["cart_course_id" => $v['cart_course_id'], "cart_parent_id" => $detail['cart_id']])) {
+                            $vproCartDetail->cart_parent_id = $detail['cart_id'];
+                            $vproCartDetail->cart_course_id = $v['cart_course_id'];
+                            $vproCartDetail->cart_add_time = time();
+                            if (isset($v['cart_is_cookie'])) $vproCartDetail->cart_is_cookie = $v["cart_is_cookie"];
+                            $vproCartDetail->save();
+                            $detailInfo = $this->getDetailInfo($v);
+                            if (key_exists("cart_userid", $detail)) {
+                                $this->redis->sAdd("cart" . $detail["cart_userid"], json_encode($detailInfo));
+                            } else {
+                                $this->redis->sAdd("cookiecart" . $detail["cart_id"], json_encode($detailInfo));
+                            }
+                            $payment = $payment + $detailInfo['cart_course_price'];
+                        }
+                    }
+                    $transaction->commit();
+                } else {
+                    $transaction->rollBack();
+                }
+            }
+            return $payment;
+        } catch (Exception $e) {
+            var_export($e);
         }
-        return $l_res;
+    }
+    /**
+     * 获得商品详细信息，用于购物车
+     * @param $cart_detail
+     * @return bool
+     * $cart_detail['cart_course_title'=>xxx, 'cart_course_price'=>xxx, 'cart_course_cover_address'=>xxx]
+     */
+    function getDetailInfo($cart_detail){
+        $vpro_courses = new VproCourses();
+        $info = $vpro_courses->find()
+            ->select([
+                'vpro_courses.course_title',
+                'vpro_courses.course_price',
+                'vpro_courses_cover.course_cover_address'
+            ])
+            ->joinWith(['vproCoursesCover'])
+            ->where(['vpro_courses.course_id'=>$cart_detail['cart_course_id']])
+            ->asArray()
+            ->one();
+        if($info){
+            $cart_detail['cart_course_title']=$info["course_title"];
+            $cart_detail['cart_course_price']=$info["course_price"];
+            $cart_detail['cart_course_cover_address']=$info["course_cover_address"];
+            return $cart_detail;
+        }
+        return false;
     }
 }
