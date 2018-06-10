@@ -331,23 +331,6 @@ q;
      * @param $order_id
      * @return bool
      */
-/*    function putSubOrder($courses){
-        $vpro_order_sub = new VproOrderSub();
-        $transaction = VproOrderSub::getDb()->beginTransaction();
-        try{
-            foreach($courses as $item) {
-                $vpro_order_sub->order_id = $item->order_id;
-                $vpro_order_sub->course_id = $item->course_id;
-                $vpro_order_sub->course_price = $item->course_price;
-                $vpro_order_sub->insert();
-            }
-            $transaction->commit();
-            return true;
-        }catch(Exception $e) {
-            $transaction->rollBack();
-            return false;
-        }
-    }*/
     function putSubOrder($courses) {
         foreach($courses as $v)
         {

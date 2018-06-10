@@ -36,6 +36,13 @@ class CartController extends ShoppingBaseController {
     /**
      * 取得id下的购物车信息
      * 如果已经登录了，那么会获得user与购物车id对应的id，没有登录会得到cookieid，如果啥都没有就返回空
+     *
+     * 登陆状态：
+     *      去redis的usercart表寻找对应用户id的购物车id，如果返回false说明还未设置，去数据库查找，如果没找到则设置-1，否则设置查找结果；
+     *      然后将该cart_id: [-1|xxxxxx]返回前台，前台根据该结果决定是否要创建新的cart_id
+     *      根据cart_id，如果cart_id有值，就去寻找购物车信息，塞入结果中
+     * 未登录状态：
+     *
      * @return string
      */
     function actionUsercart()
@@ -46,6 +53,7 @@ class CartController extends ShoppingBaseController {
             // cookiecart[]
             $id = "cookiecart" . $body['cart_cookieid'];
         } elseif (isset($body['cart_userid'])) {
+            // 在登陆状态下，去redis usercart表下找userid对应的购物车id，如果返回false说明没有，需要去数据库里找一找，找不到，需要生成；如果有，取出来
             // cart[]
             $id = "cart" . $body['cart_userid'];
             // 设置redis hash表中的cart_id

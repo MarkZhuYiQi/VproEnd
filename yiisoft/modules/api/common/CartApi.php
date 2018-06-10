@@ -37,21 +37,18 @@ class CartApi{
         $transaction = $vproCartDetail::getDb()->beginTransaction();
         try {
             if(count($detail["cart_detail"]) <= 0) throw new \Exception("could not delete the cart products due to lack of cart_detail.", 'CART_COURSES_DELETE_LOST');
-            var_export($detail);
             foreach($detail["cart_detail"] as $v){
-                var_export($vproCartDetail::findOne(['cart_course_id' => $v['cart_course_id'], 'cart_parent_id' => $v['cart_parent_id']]));
-                if($record = $vproCartDetail::findOne(['cart_course_id' => $v['cart_course_id'], 'cart_parent_id' => $v['cart_parent_id']])){
+                if($record = $vproCartDetail::findOne(['cart_course_id' => $v['cart_course_id'], 'cart_parent_id' => $v['cart_parent_id']])) {
                     $cart_name = $detail['is_login'] ? "cart" . $detail['cart_userid'] : 'cookiecart' . $detail['cart_id'];
                     $record->delete();
                     $res = $this->redis->sMembers($cart_name);
-                    foreach($res as $key =>$value){
-                        if(json_decode($value)->cart_course_id === $v['cart_course_id']){
+                    foreach($res as $value){
+                        if(json_decode($value)->cart_course_id === $v['cart_course_id']) {
                             $this->redis->sRem($cart_name, $value);
                         }
                     }
                 }
             }
-            exit();
             $transaction->commit();
             return true;
         }catch(Exception $e){
