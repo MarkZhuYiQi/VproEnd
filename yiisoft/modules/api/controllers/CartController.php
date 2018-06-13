@@ -21,15 +21,18 @@ class CartController extends ShoppingBaseController {
     }
     function actionAddcartdetail()
     {
-        $request = \Yii::$app->request;
+        $request = $this->request;
         $detail = $request->bodyParams;
         $this->cartApi->addCartDetail($detail);
     }
     function actionDelcartdetail(){
-        $request = \Yii::$app->request;
+        $request = $this->request;
         $detail=$request->bodyParams;
-        if(count($detail)==0)return json_encode([]);
-        return $this->cartApi->delCartDetail($detail);
+        if(count($detail) === 0)return json_encode($this->returnInfo('no cart item transfered', $this->params['CART_IS_NULL']));
+        if ($this->cartApi->delCartDetail($detail)) {
+            return json_encode($this->returnInfo(true));
+        }
+        return json_encode($this->returnInfo(false, $this->params['CART_ITEM_DELETE_FAILURE']));
     }
 
 

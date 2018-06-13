@@ -31,7 +31,7 @@ class ProductController extends ShoppingBaseController
      * @return array
      */
     public function actionCoursedetail(){
-        $request = Yii::$app->request;
+        $request = $this->request;
         $course_id = $request->get("cid", false);
         if($course_id){
             $l_res = $this->courseApi->getCourseLessonList($course_id);
@@ -40,6 +40,8 @@ class ProductController extends ShoppingBaseController
             $c_res = $this->getCrumbnavbar($d_res['course_pid']);
             if(!count($l_res) || !count($d_res) || !count($c_res)){}
             return json_encode($this->returnInfo(['detail'=>$d_res, 'lesson_list'=>$l_res, 'crumb'=>$c_res]));
+        } else {
+            return json_encode($this->returnInfo('params missing', $this->params['PARAMS_ERROR']));
         }
     }
     function actionCheckcourses(){

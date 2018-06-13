@@ -278,8 +278,7 @@ q;
                 $vproOrder->order_time = time();
                 $vproOrder->user_id = $orderInfo['user_id'];
                 $vproOrder->order_title = $subject;
-
-                // 生成付款链接 ['pay_url' => xxx]
+                // 生成付款链接 ['pay_url' => xxx, ...yxxx...]
                 $payData = $this->genPayUrl($order_id, $subject, $orderInfo['summary_price'], 1800, $order_id);
                 foreach($orderInfo['courses'] as $value)
                 {
@@ -320,8 +319,7 @@ q;
             'return_param'      =>  (string)$return_param,
             'goods_type'        =>  (string)$goods_type,
         ];
-        $payData['pay_url'] = \Yii::$app->runAction("api/pay/put-web-pay",['orderInfo'=>json_encode($payData)]);
-
+        $payData['pay_url'] = \Yii::$app->runAction("api/pay/put-web-pay",['orderInfo' => json_encode($payData)]);
         return $payData;
     }
 

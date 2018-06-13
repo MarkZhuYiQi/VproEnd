@@ -3,6 +3,7 @@ namespace api\controllers;
 
 use app\controllers\CombaseController;
 use app\models\ModelFactory;
+use app\models\VproOrderLogs;
 use Payment\Client\Charge;
 use Payment\Common\PayException;
 use Payment\Config;
@@ -61,7 +62,7 @@ class PayController extends CombaseController {
 //            'qr_mod' => '',
         ];*/
         try{
-            $orderInfo['amount'] = (string)1.5;
+            $orderInfo['amount'] = $orderInfo['amount'] > 0 ? (string)$orderInfo['amount'] : (string)1.5;
             $url = Charge::run(Config::ALI_CHANNEL_WEB,\Yii::$app->getModule('api')->params['aliconfig'], $orderInfo);
             return $url;
         }catch(PayException $e){
@@ -69,23 +70,45 @@ class PayController extends CombaseController {
         }
     }
 
-    function actionPaycallback(){
+    function actionPaycallback() {
         $request = \Yii::$app->request;
-        $res['order_id'] = $request->get('out_trade_no',false);
-        $res['order_payment_id'] = $request->get('out_trade_no', false);
-        $res['total_amount'] = $request->get('total_amount', false);
-        $res['seller_id'] = $request->get('seller_id', false);
-
-        $res['auth_app_id'] = $request->get('auth_app_id', false);
-        if(
+        $res = $request->get();
+        $log['total'] = $res['total_amount'];
+        $log['order_id'] = $res['out_trade_no'];
+        $log['trade_no'] = $res['trade_no'];
+        $log['timestamp'] = $res['timestamp'];
+        $log['auth_app_id'] = $res['auth_app_id'];
+        $log['seller_id'] = $res['seller_id'];
+        $log['app_id'] = $res['app_id'];
+        $vproOrderLogs = new VproOrderLogs();
+        // 验签失败
+        if (
             $res['auth_app_id'] != \Yii::$app->getModule('api')->params['aliconfig']['app_id'] ||
-            $res['seller_id']!=\Yii::$app->getModule('api')->params['aliconfig']['seller_id']){
+            $res['seller_id'] != \Yii::$app->getModule('api')->params['aliconfig']['partner'] ||
+            $res['app_id'] != \Yii::$app->getModule('api')->params['aliconfig']['app_id']
+        ) {
             //false
+            $vproOrderLogs->log_operation = $this->params['PAY_ACCOUNT_INFO_MISMATCH'];
+            $vproOrderLogs->log_time = time();
+            $vproOrderLogs->log_message = json_encode($log);
+            $vproOrderLogs->order_id = $log['order_id'];
+            $vproOrderLogs->save();
+            exit();
         }
-        $vpro_order=ModelFactory::loadModel('vpro_order');
-        $order_instance = $vpro_order::findOne(['order_id'=>$res['order_id']]);
-        if($order_instance === null){
-            //false
+        $vpro_order = ModelFactory::loadModel('vpro_order');
+        $order_instance = $vpro_order::findOne(['order_id' => $res['out_trade_no']]);
+        // 找到订单，更改状态
+        if($order_instance !== null) {
+            $order_instance->order_payment_id = $res['trade_no'];
+            $order_instance->order_payment_price = $res['total_amount'];
+        } else {
+            // 没找到订单，订单不存在
+            $vproOrderLogs->log_operation = $this->params['ORDER_NOT_EXIST'];
+            $vproOrderLogs->log_time = time();
+            $vproOrderLogs->log_message = json_encode($log);
+            $vproOrderLogs->order_id = $log['order_id'];
+            $vproOrderLogs->save();
+            exit();
         }
         /**
          * payment:
@@ -94,11 +117,17 @@ class PayController extends CombaseController {
          * 2：支付异常（如实收金额与订单数字不符）
          * 3：
          */
-        if($order_instance->order_price != $res['total_amount']){
+        if($order_instance->order_price !== $res['total_amount']) {
             $order_instance->order_payment = self::PAY_DIFF_AMOUNT;
         }
         $order_instance->order_payment = self::PAY_SUCCESS;
 
-        //order_log
+        $order_instance->save();
+
+        $vproOrderLogs->log_operation = $this->params['PAY_SUCCESS'];
+        $vproOrderLogs->log_message = json_encode($log);
+        $vproOrderLogs->order_id = $log['order_id'];
+        $vproOrderLogs->save();
+        exit();
     }
 }

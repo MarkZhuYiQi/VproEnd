@@ -1,5 +1,6 @@
 <?php
 namespace api\controllers;
+use api\common\CourseApi;
 use api\controllers\ShoppingBaseController;
 use app\models\ModelFactory;
 use app\models\VproCourses;
@@ -10,10 +11,12 @@ class VproplayController extends ShoppingBaseController
 //------------------------------------------------------------------------------------------------------------------
 
 //----------------------------------------------------------------------------------------------------------------------
+    private $courseApi;
     public function init()
     {
         parent::init();
         $this->enableCsrfValidation=false;
+        $this->courseApi = new CourseApi();
     }
     public function actionVproauth(){
         $request=Yii::$app->request;
@@ -39,7 +42,7 @@ class VproplayController extends ShoppingBaseController
      */
     public function actionGetLessonsList() {
         if($body = $this->checkParams(['course_id'], 'get')) {
-            $list = $this->getCourseLessonList($body['course_id']);
+            $list = $this->courseApi->getCourseLessonList($body['course_id']);
             return json_encode($this->returnInfo($list));
         }
         return json_encode($this->returnInfo('params missing', $this->params['PARAMS_ERROR']));
@@ -52,7 +55,7 @@ class VproplayController extends ShoppingBaseController
     public function actionGetVideosList() {
         $body = $this->checkParams(['course_id', 'lesson_id'], 'post');
         if(!$body) return json_encode($this->returnInfo('params transfer error', 'PARAMS_ERROR'));
-        $list = $this->getCourseLessonList($body['course_id']);
+        $list = $this->courseApi->getCourseLessonList($body['course_id']);
         foreach($list as $key => $value) {
             if($value->lesson_is_chapter_head) {
                 unset($list[$key]);

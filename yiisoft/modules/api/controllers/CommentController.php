@@ -77,6 +77,12 @@ class CommentController extends ShoppingBaseController
     {
         // 2个参数，课程id以及评论页码
         $body = $this->checkParams(['lesson_id', 'p'], 'get');
+
+        // ----------------------------------------------------------
+        // 写死用于展示
+        $body['lesson_id'] = 27675;
+        // ----------------------------------------------------------
+
         if ($body) {
             // redis里的list表名称
             $comments_push_list = 'VproComment_' . $body['lesson_id'] . '_list';
