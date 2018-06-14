@@ -30,21 +30,23 @@ class ProductController extends ShoppingBaseController
      * @param $course_id
      * @return array
      */
-    public function actionCoursedetail(){
+    public function actionCoursedetail()
+    {
         $request = $this->request;
         $course_id = $request->get("cid", false);
-        if($course_id){
+        if($course_id) {
             $l_res = $this->courseApi->getCourseLessonList($course_id);
             $d_res = $this->getCourseDetail($course_id);
 
             $c_res = $this->getCrumbnavbar($d_res['course_pid']);
-            if(!count($l_res) || !count($d_res) || !count($c_res)){}
+            if (!count($l_res) || !count($d_res) || !count($c_res)) {}
             return json_encode($this->returnInfo(['detail'=>$d_res, 'lesson_list'=>$l_res, 'crumb'=>$c_res]));
         } else {
             return json_encode($this->returnInfo('params missing', $this->params['PARAMS_ERROR']));
         }
     }
-    function actionCheckcourses(){
+    function actionCheckcourses()
+    {
         $orderInfo = $this->request->bodyParams;
         if(count($orderInfo) === 0)return json_encode($this->returnInfo('courses not found', $this->params['COURSES_NOT_FOUND']));
         $check_res = $this->courseApi->checkCourses($orderInfo["order_course_ids"]);
@@ -56,7 +58,8 @@ class ProductController extends ShoppingBaseController
      * @return array|null|\yii\db\ActiveRecord
      * 获得课程的详细信息
      */
-    public function getCourseDetail($course_id){
+    public function getCourseDetail($course_id)
+    {
         $VproCourses = new VproCourses();
         $res = $VproCourses::find()
             ->select([
@@ -65,6 +68,7 @@ class ProductController extends ShoppingBaseController
                 'vpro_courses.course_title',
                 'vpro_courses.course_price',
                 'vpro_courses.course_author',
+                'vpro_courses.course_discount_price',
                 'vpro_courses_cover.course_cover_address',
                 'vpro_auth.auth_appid',
                 'vpro_courses_temp_detail.course_score',

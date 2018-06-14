@@ -69,10 +69,6 @@ class CategoryController extends CombaseController
     }
 
 
-
-
-
-
     public function actionCategories(){
         $request=Yii::$app->request;
         $page = $request->get("p", 1);
@@ -211,6 +207,7 @@ SELECT
 	course.course_author,
 	course.course_time,
 	course.course_price,
+	course.course_discount_price,
 	course.course_title,
 	course_cover.course_cover_key,
 	course_cover.course_cover_address,

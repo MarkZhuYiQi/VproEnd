@@ -18,7 +18,6 @@ use Exception;
 
 class OrderController extends ShoppingBaseController {
 //    public $modelClass='app\models\VproOrder';
-    const PAGINATION_LIMIT=10;
     private $courseApi;
     private $couponApi;
     private $cartApi;
@@ -50,11 +49,19 @@ class OrderController extends ShoppingBaseController {
         unset($actions['index'], $actions['create']);
         return $actions;
     }
-    function actionGetOrder(){
-        $request = \Yii::$app->request;
-        $user_id = $request->get('user_id',false);
-        $p = $request->get('p',1);
-        $offset = ($p - 1) * self::PAGINATION_LIMIT;
+    function actionGetOrder()
+    {
+        $user_id = $this->request->get('user_id', false);
+        $p = $this->request->get('p', 1);
+        $orderKey = 'userOrders:' . $user_id . ':' . $p;
+        $status = $this->request->get('status',false);
+        $payStatus = $status !== false ? $status : '0, 1, 2';
+        $orderKey = $status !== false ? $orderKey . ':' . $status : $orderKey;
+        if (!$user_id) return json_encode($this->returnInfo('params missing', $this->params['PARAMS_ERROR']));
+        /*if ($this->redis->ttl($orderKey) > 0) {
+            return json_encode($this->returnInfo(json_decode($this->redis->get($orderKey))));
+        }*/
+        $offset = ($p - 1) * $this->params['ORDER_PAGINATION_LIMIT'];
         $orders_sql = <<<q
 SELECT
 	o.order_id,
@@ -65,8 +72,11 @@ SELECT
 	o.order_discount,
 	o.order_payment,
 	o.order_title,
+    o.order_payment_id,
+    o.order_payment,
+	o.order_payment_price,
 	sub.course_id,
-	sub.course_price,
+	sub.course_price AS order_course_price,
 	c.course_title,
 	c.course_author,
 	c.course_price,
@@ -76,7 +86,7 @@ FROM
 	vpro_order AS o
 LEFT JOIN vpro_order_sub AS sub ON sub.order_id = o.order_id
 LEFT JOIN vpro_courses as c ON c.course_id = sub.course_id 
-LEFT JOIN vpro_courses_cover AS cover ON cover.course_cover_id = sub.course_id
+LEFT JOIN vpro_courses_cover AS cover ON cover.course_cover_id = sub.course_id 
 LEFT JOIN vpro_auth AS auth on auth.auth_id = c.course_author
 WHERE
     o.order_id <= 
@@ -92,24 +102,29 @@ WHERE
         DESC
 		LIMIT 1 OFFSET $offset
 	)
+AND
+	o.order_payment IN(:payStatus)
 ORDER BY
 	o.order_id
 DESC
 LIMIT :limit;
 q;
-//        echo $orders_sql;
-//        exit();
-        $db = \Yii::$app->db;
-        $orders = $db->createCommand($orders_sql)->bindValues(['limit'=>self::PAGINATION_LIMIT])->queryAll();
+        $orders = $this->db->createCommand($orders_sql)
+            ->bindValues([
+                'limit'     =>  $this->params['ORDER_PAGINATION_LIMIT'],
+                'payStatus' =>  $payStatus
+            ])
+            ->queryAll();
         $orders = $this->genOrderHistory($orders);
-        $orders_count = $this->genOrderHistoryPagination($user_id);
+        $orders_count = $this->genOrderHistoryPagination($user_id, $payStatus);
         $res = [
-            'orders'=>$orders,
-            'page_count'=>$orders_count,
-            'current_page'=>$p
+            'orders'        =>  $orders,
+            'ordersCount'   =>  $orders_count,
+            'currentPage'   =>  $p
         ];
-//        var_export($orders);
-        return json_encode($res);
+        // 存储方式为 userOrders:[用户id]:[]
+        $this->redis->setEx($orderKey, rand(30, 60), json_encode($res));
+        return json_encode($this->returnInfo($res));
     }
 
     /**
@@ -122,12 +137,15 @@ q;
         foreach($origin_data as $data) {
             if (!is_array($res[$data['order_id']])) $res[$data['order_id']] = [];
             $res[$data['order_id']] = [
-                'order_price' => $data['order_price'],
-                'order_time' => $data['order_time'],
-                'user_id' => $data['user_id'],
-                'order_coupon_used' => $data['order_coupon_used'],
-                'order_discount' => $data['order_discount'],
-                'order_title' => $data['order_title'],
+                'order_price'           =>  $data['order_price'],
+                'order_time'            =>  $data['order_time'],
+                'user_id'               =>  $data['user_id'],
+                'order_coupon_used'     =>  $data['order_coupon_used'],
+                'order_discount'        =>  $data['order_discount'],
+                'order_title'           =>  $data['order_title'],
+                'order_payment_id'      =>  $data['order_payment_id'] === null ? -1 : $data['order_payment_id'],
+                'order_payment'         =>  $data['order_payment'],
+                'order_payment_price'   =>  $data['order_payment_price']
             ];
             if (!is_array($res[$data['order_id']]['sub_order'])) $res[$data['order_id']]['sub_order'] = [];
             array_push($res[$data['order_id']]['sub_order'],
@@ -142,9 +160,11 @@ q;
         }
         return $res;
     }
-    function genOrderHistoryPagination($user_id){
+
+    function genOrderHistoryPagination($user_id, $status) {
+        $status = strlen($status) > 1 ? [0, 1, 2] : $status;
         $orders = new VproOrder();
-        return $count = $orders::find()->where(['user_id'=>$user_id])->count();
+        return $orders::find()->select(['order_id'])->where(['user_id'=>$user_id, 'order_payment' => $status])->count();
     }
     /**
      * 下单
