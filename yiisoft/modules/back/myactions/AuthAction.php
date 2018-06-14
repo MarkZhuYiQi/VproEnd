@@ -50,7 +50,7 @@ class AuthAction extends Action{
         //判断该记录中的认证时间是否超过限定时间，没有超过直接返回该记录，超过了就生成新字符串、认证时间和IP保存到数据库，然后返回记录。
         if($model){
             $signer=new Sha256();
-            $key=\Yii::$app->getModule('api')->params['securityKey'];
+            $key=\Yii::$app->params['securityKey'];
             $jwt = $model->auth_token ? (new Parser())->parse((string)$model->auth_token):false;
             if($jwt){
                 $vd=new ValidationData();
@@ -68,7 +68,7 @@ class AuthAction extends Action{
             $token=(new Builder())->setIssuer("mark")      //iss, jwt签发者
             ->setAudience("zhu")       //aud 接收jwt的一方
             ->setSubject("everyone")         //sub面向的用户
-            ->setExpiration(time()+\Yii::$app->getModule('api')->params['expireTime'])        //exp过期时间
+            ->setExpiration(time()+\Yii::$app->params['expireTime'])        //exp过期时间
             ->setIssuedAt(time())                       //iat签发时间，以上是标准中注册的声明
             ->setId("1111111", true)    //给头部加入一个键值对
             ->set("auth_id", $model->auth_id)

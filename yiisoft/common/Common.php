@@ -1,5 +1,7 @@
 <?php
 namespace app\common;
+use common\RedisInstance;
+
 class Common{
     public static function ip(){
         switch (true) {
@@ -39,5 +41,8 @@ class Common{
         $decrypt = '';
         openssl_private_decrypt(base64_decode($data), $decrypt, $pi_key);//私钥解密
         return $decrypt;
+    }
+    public static function forbiddenAccess() {
+        return !!(RedisInstance::getRedis()->get('p' . self::ip()) > \Yii::$app->params['MISS_THRESHOLD']);
     }
 }

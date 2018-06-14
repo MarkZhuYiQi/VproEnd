@@ -20,7 +20,7 @@ class AuthController extends BaseController{
     private $params;
     function init() {
         $this->request = \Yii::$app->request;
-        $this->params = \Yii::$app->getModule('api')->params;
+        $this->params = \Yii::$app->params;
     }
     function behaviors(){
         $behaviors=parent::behaviors();

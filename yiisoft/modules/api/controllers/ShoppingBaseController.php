@@ -1,6 +1,7 @@
 <?php
 namespace api\controllers;
 
+use app\common\JwtAuth;
 use app\common\LogHandler;
 use app\controllers\CombaseController;
 use app\controllers\SnowflakeController;
@@ -23,14 +24,14 @@ class ShoppingBaseController extends CombaseController{
         parent::init();
         $this->redis = RedisInstance::getRedis() ? $this->redis : $this->returnInfo('database connect error!', 'REDIS_CONNECT_ERROR');
         $this->db = \Yii::$app->db;
-        $this->params = \Yii::$app->getModule('api')->params;
+        $this->params = \Yii::$app->params;
         $this->logHandler = LogHandler::getLogHandler();
     }
     /**
      * 通过twitter雪花算法获得订单编号
      * @return int
      */
-    protected function getOrderId(){
+    protected function getOrderId() {
         return (new SnowflakeController())->getOrderId();
     }
 
@@ -39,7 +40,7 @@ class ShoppingBaseController extends CombaseController{
      * @param int $primaryKey
      * @return mixed
      */
-    protected function getOrderByPrimaryKey(int $primaryKey){
+    protected function getOrderByPrimaryKey(int $primaryKey) {
         $one = $this->_orderModel->findOne($primaryKey);
         $primaryKey = $this->getOrderPrimaryKey();
         if($one[$primaryKey]){
@@ -52,7 +53,7 @@ class ShoppingBaseController extends CombaseController{
      * 获得订单表主键
      * @return string
      */
-    protected function getOrderPrimaryKey(){
+    protected function getOrderPrimaryKey() {
         return 'order_id';
     }
 

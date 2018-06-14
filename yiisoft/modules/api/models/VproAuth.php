@@ -61,7 +61,7 @@ class VproAuth extends \yii\redis\ActiveRecord implements IdentityInterface {
                 'jti'=>1111111,
                 'sub'=>'everyone',
             ];
-            if($jwt->verify(new Sha256(), \Yii::$app->getModule('api')->params['securityKey']) && $jwt->validate($vd)){
+            if($jwt->verify(new Sha256(), \Yii::$app->params['securityKey']) && $jwt->validate($vd)){
                 self::$current_user_id = $getRes->auth_id;
                 return $getRes;
             }else{

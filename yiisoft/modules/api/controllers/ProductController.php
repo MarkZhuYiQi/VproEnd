@@ -3,8 +3,10 @@
 namespace api\controllers;
 use api\common\CourseApi;
 use api\controllers\ShoppingBaseController;
+use app\common\Common;
 use app\models\ModelFactory;
 use app\models\VproCourses;
+use common\RedisInstance;
 use Yii;
 
 
@@ -75,6 +77,11 @@ class ProductController extends ShoppingBaseController
                 'vpro_courses_temp_detail.course_clickNum'
             ])
             ->joinWith(['vproCoursesTempDetail', 'vproCoursesCover', 'vproAuth'])->where(['vpro_courses.course_id'=>$course_id])->asArray()->one();
+        if ($res === null) {
+            // 这里进行计分，如果db没有命中，说明是没有意义的课程id，涉嫌恶意访问，进行恶意积分累加
+            $this->redis->incrBy('p' . Common::ip(), $this->params['DB_MISS']);
+            $this->redis->expire('p' . Common::ip(), $this->params['SCORE_EXPIRE']);
+        }
         return $res;
     }
 

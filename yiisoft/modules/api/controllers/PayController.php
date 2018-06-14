@@ -63,7 +63,7 @@ class PayController extends CombaseController {
         ];*/
         try{
             $orderInfo['amount'] = $orderInfo['amount'] > 0 ? (string)$orderInfo['amount'] : (string)1.5;
-            $url = Charge::run(Config::ALI_CHANNEL_WEB,\Yii::$app->getModule('api')->params['aliconfig'], $orderInfo);
+            $url = Charge::run(Config::ALI_CHANNEL_WEB,\Yii::$app->params['aliconfig'], $orderInfo);
             return $url;
         }catch(PayException $e){
             throw $e;
@@ -83,9 +83,9 @@ class PayController extends CombaseController {
         $vproOrderLogs = new VproOrderLogs();
         // 验签失败
         if (
-            $res['auth_app_id'] != \Yii::$app->getModule('api')->params['aliconfig']['app_id'] ||
-            $res['seller_id'] != \Yii::$app->getModule('api')->params['aliconfig']['partner'] ||
-            $res['app_id'] != \Yii::$app->getModule('api')->params['aliconfig']['app_id']
+            $res['auth_app_id'] != \Yii::$app->params['aliconfig']['app_id'] ||
+            $res['seller_id'] != \Yii::$app->params['aliconfig']['partner'] ||
+            $res['app_id'] != \Yii::$app->params['aliconfig']['app_id']
         ) {
             //false
             $vproOrderLogs->log_operation = $this->params['PAY_ACCOUNT_INFO_MISMATCH'];

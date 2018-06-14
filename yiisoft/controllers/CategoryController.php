@@ -1,5 +1,6 @@
 <?php
 namespace app\controllers;
+use app\common\Common;
 use app\models\ModelFactory;
 use common\RedisInstance;
 use Yii;
@@ -82,7 +83,14 @@ class CategoryController extends CombaseController
             return json_encode($this->returnInfo("page not found", $this->params['PARAMS_ERROR']));
         }
         //如果nav_id没有找到说明有人瞎访问,直接返回首页
-        $nav_id = $this->redis->hGet("VproNavbarList", $nav_key) ? $this->redis->hGet("VproNavbarList", $nav_key) : 9999;
+        if ($this->redis->hGet("VproNavbarList", $nav_key)) {
+            $nav_id = $this->redis->hGet("VproNavbarList", $nav_key);
+        } else {
+            $nav_id = 9999;
+            // 这里进行计分，如果db没有命中，说明是没有意义的课程id，涉嫌恶意访问，进行恶意积分累加
+            $this->redis->incrBy('p' . Common::ip(), $this->params['DB_MISS']);
+            $this->redis->expire('p' . Common::ip(), $this->params['REDIS_MISS']);
+        }
         $res = json_decode($this->redis->get("VproNavbar"));
         //拿到了所需要的导航对象，根据这个集合去取值
         $request_nav = $this->_getSubNavs($res, $nav_id);

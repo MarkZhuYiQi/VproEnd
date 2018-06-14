@@ -17,6 +17,20 @@ class CommentController extends ShoppingBaseController
         $this->enableCsrfValidation = false;
     }
 
+    function behaviors(){
+        $behaviors=parent::behaviors();
+        $behaviors['authenticator']=[
+            'class'=>JwtAuth::className(),
+            /*
+             *因为此post请求的 content-type不是one of the “application/x-www-form-urlencoded, multipart/form-data, or text/plain”, 所以Preflighted requests被发起。
+             * “preflighted” requests first send an HTTP OPTIONS request header to the resource on the other domain, in order to determine whether the actual request is safe to send.
+             * 然后得到服务器response许可之后，再发起其post请求。
+             */
+            'except'=>['index', 'create', 'options', 'info', 'user-list']
+        ];
+        return $behaviors;
+    }
+
     /**
      * 获得评论
      * 从VproCommentAgree和VproCommentOppose根据id hmget需要的值， 组合成数组返还给前端
