@@ -28,7 +28,7 @@ class VproplayController extends ShoppingBaseController
              * “preflighted” requests first send an HTTP OPTIONS request header to the resource on the other domain, in order to determine whether the actual request is safe to send.
              * 然后得到服务器response许可之后，再发起其post请求。
              */
-            'except'=>[]
+            'except'=>['get-rec-courses']
         ];
         return $behaviors;
     }
@@ -62,6 +62,7 @@ class VproplayController extends ShoppingBaseController
         return json_encode($this->returnInfo('params missing', $this->params['PARAMS_ERROR']));
     }
 
+
     /**
      * 获得视频列表
      * @return string
@@ -76,5 +77,18 @@ class VproplayController extends ShoppingBaseController
             }
         }
         var_export($list);
+    }
+
+    /**
+     * 拿到推荐表
+     */
+    function actionGetRecCourses() {
+        if (!$body = $this->checkParams(['courseId'], 'get')) return json_encode($this->returnInfo('params missing', $this->params['PARAMS_ERROR']));
+        $res = $this->courseApi->getRecCourses($body['courseId']);
+        if(count($res) > 0)
+        {
+            return json_encode($this->returnInfo($res));
+        }
+
     }
 }

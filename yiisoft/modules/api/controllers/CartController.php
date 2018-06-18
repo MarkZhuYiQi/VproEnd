@@ -1,6 +1,7 @@
 <?php
 namespace api\controllers;
 use api\common\CartApi;
+use app\common\JwtAuth;
 use app\models\ModelFactory;
 use app\models\VproCart;
 

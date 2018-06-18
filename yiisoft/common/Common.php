@@ -45,4 +45,8 @@ class Common{
     public static function forbiddenAccess() {
         return !!(RedisInstance::getRedis()->get('p' . self::ip()) > \Yii::$app->params['MISS_THRESHOLD']);
     }
+    public static function failScoring($score) {
+        RedisInstance::getRedis()->incrBy('p' . self::ip(), $score);
+        RedisInstance::getRedis()->expire('p' . self::ip(), \Yii::$app->params['SCORE_EXPIRE']);
+    }
 }

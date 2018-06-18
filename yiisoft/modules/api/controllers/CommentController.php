@@ -1,6 +1,7 @@
 <?php
 namespace api\controllers;
 use api\controllers\ShoppingBaseController;
+use app\common\JwtAuth;
 use app\models\ModelFactory;
 use app\models\VproComment;
 use common\RedisInstance;
