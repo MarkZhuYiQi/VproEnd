@@ -52,7 +52,7 @@ class CombaseController extends Controller
                 'class'=>Cors::className(),
                 'cors'=>[
 //                    'Origin' => ['http://localhost:8080','http://127.0.0.1:8080'],//定义允许来源的数组
-                    'Origin' => ['http://localhost:9528','http://127.0.0.1:9528','http://localhost:8080','http://127.0.0.1:8080', 'http://223.112.88.211:9988'],//定义允许来源的数组
+                    'Origin' => ['http://localhost:9528','http://127.0.0.1:9528','http://localhost:8080','http://127.0.0.1:8080', 'http://223.112.88.211:9988', 'http://markzhu.imwork.net:10718'],//定义允许来源的数组
                     'Access-Control-Request-Method' => ['GET','POST','PUT','DELETE', 'HEAD', 'OPTIONS'],//允许动作的数组
                     'Access-Control-Request-Headers' => ['x-requested-with','content-type','if-modified-since', 'X-Token','Authorization'],
                     // Allow only headers 'X-Wsse'

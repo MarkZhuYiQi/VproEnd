@@ -15,6 +15,7 @@ use app\common\JwtAuth;
 use app\controllers\SnowflakeController;
 use app\models\VproOrder;
 use app\models\VproOrderSub;
+use common\RedisInstance;
 use Exception;
 
 class OrderController extends ShoppingBaseController {
@@ -53,7 +54,7 @@ class OrderController extends ShoppingBaseController {
              * “preflighted” requests first send an HTTP OPTIONS request header to the resource on the other domain, in order to determine whether the actual request is safe to send.
              * 然后得到服务器response许可之后，再发起其post请求。
              */
-            'except'=>[]
+            'except'=>['get-order-courses']
         ];
         return $behaviors;
     }
@@ -373,5 +374,29 @@ q;
             if (!$vpro_order_sub->save())return false;
         }
         return true;
+    }
+    function actionGetOrderCourses()
+    {
+        if(!$body = $this->checkParams(['userId'], 'get'))return json_encode($this->returnInfo('params missing', $this->params['PARAMS_ERROR']));
+        $key = 'purchased' . $body['userId'];
+        if(!RedisInstance::checkExpired($key))return json_encode($this->returnInfo(json_decode($this->redis->get($key))));
+        $vproOrder = new VproOrder();
+        $res = $vproOrder::find()
+            ->alias('vo')
+            ->select(['vos.course_id'])
+            ->join('LEFT JOIN', 'vpro_order_sub as vos', 'vos.order_id = vo.order_id')
+            ->where(['vo.user_id' => $body['userId'], 'vo.order_payment' => 1])
+            ->asArray()
+            ->all();
+        $ids = [];
+        if (count($res) > 0)
+        {
+            foreach($res as $key => $value)
+            {
+                array_push($ids, $value['course_id']);
+            }
+        }
+        $this->redis->setex('purchased' . $body['userId'], 300, json_encode($ids));
+        return json_encode($this->returnInfo($ids));
     }
 }
