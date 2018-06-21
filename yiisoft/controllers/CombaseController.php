@@ -27,8 +27,6 @@ class CombaseController extends Controller
         $this->params = \Yii::$app->params;
         $this->request = \Yii::$app->request;
 
-
-
 //        header("Access-Control-Allow-Origin:http://127.0.0.1:8080");
 //        header("Access-Control-Allow-Methods:GET,POST,PUT,DELETE,HEAD,OPTIONS");
 //        header("Access-Control-Allow-Headers:Origin,X-Requested-With,Access-Control-Allow-Origin,Content-Type,If-Modified-Since");
@@ -51,7 +49,6 @@ class CombaseController extends Controller
             [
                 'class'=>Cors::className(),
                 'cors'=>[
-//                    'Origin' => ['http://localhost:8080','http://127.0.0.1:8080'],//定义允许来源的数组
                     'Origin' => ['http://localhost:9528','http://127.0.0.1:9528','http://localhost:8080','http://127.0.0.1:8080', 'http://223.112.88.211:9988', 'http://markzhu.imwork.net:10718'],//定义允许来源的数组
                     'Access-Control-Request-Method' => ['GET','POST','PUT','DELETE', 'HEAD', 'OPTIONS'],//允许动作的数组
                     'Access-Control-Request-Headers' => ['x-requested-with','content-type','if-modified-since', 'X-Token','Authorization'],
@@ -83,42 +80,42 @@ class CombaseController extends Controller
         }
         return $body;
     }
-    protected $_errorHandlerModelName;
-    /**
-     * @property $code | Int, http 错误码
-     * @property $message | String, 错误的具体信息
-     * @property $file | string, 发生错误的文件
-     * @property $line | Int, 发生错误所在文件的代码行
-     * @property $created_at | Int, 发生错误的执行时间戳
-     * @property $ip | string, 访问人的ip
-     * @property $name | string, 错误的名字
-     * @property $trace_string | string, 错误的追踪信息
-     * @return 返回错误存储到mongodb的id，作为前端显示的错误编码
-     * 该函数从errorHandler得到错误信息，然后保存到mongodb中。
-     */
-    public function saveByErrorHandler(
-        $code, $message, $file, $line, $created_at,
-        $ip, $name, $trace_string, $url, $req_info=[]
-    ){
-        $category = \Yii::$app->params['AppName'];
-        $model = new $this->_errorHandlerModelName();
-        $model->category     = $category;
-        $model->code         = $code;
-        $model->message      = $message;
-        $model->file         = $file;
-        $model->line         = $line;
-        $model->created_at   = $created_at;
-        $model->ip           = $ip;
-        $model->name         = $name;
-        $model->url          = $url;
-        $model->request_info = $req_info;
-        $model->trace_string = $trace_string;
-        $model->save();
-        return (string)$model[$this->getPrimaryKey()];
-
-    }
-    public function getPrimaryKey(){
-        return '123';
-    }
+//    protected $_errorHandlerModelName;
+//    /**
+//     * @property $code | Int, http 错误码
+//     * @property $message | String, 错误的具体信息
+//     * @property $file | string, 发生错误的文件
+//     * @property $line | Int, 发生错误所在文件的代码行
+//     * @property $created_at | Int, 发生错误的执行时间戳
+//     * @property $ip | string, 访问人的ip
+//     * @property $name | string, 错误的名字
+//     * @property $trace_string | string, 错误的追踪信息
+//     * @return 返回错误存储到mongodb的id，作为前端显示的错误编码
+//     * 该函数从errorHandler得到错误信息，然后保存到mongodb中。
+//     */
+//    public function saveByErrorHandler(
+//        $code, $message, $file, $line, $created_at,
+//        $ip, $name, $trace_string, $url, $req_info=[]
+//    ){
+//        $category = \Yii::$app->params['AppName'];
+//        $model = new $this->_errorHandlerModelName();
+//        $model->category     = $category;
+//        $model->code         = $code;
+//        $model->message      = $message;
+//        $model->file         = $file;
+//        $model->line         = $line;
+//        $model->created_at   = $created_at;
+//        $model->ip           = $ip;
+//        $model->name         = $name;
+//        $model->url          = $url;
+//        $model->request_info = $req_info;
+//        $model->trace_string = $trace_string;
+//        $model->save();
+//        return (string)$model[$this->getPrimaryKey()];
+//
+//    }
+//    public function getPrimaryKey(){
+//        return '123';
+//    }
 
 }

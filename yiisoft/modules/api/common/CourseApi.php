@@ -81,7 +81,7 @@ class CourseApi{
     /**
      * @param $course_id
      * @return array|\yii\db\ActiveRecord[]
-     * 获得课程下的详细课时列表
+     * 获得课程下的详细课时列表-
      */
     public function getCourseLessonList($course_id){
         if(RedisInstance::checkRedisKey($course_id, 'VproLessonsList') || RedisInstance::checkExpired($course_id, 'VproLessonsList')) {

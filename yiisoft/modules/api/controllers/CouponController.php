@@ -2,6 +2,7 @@
 namespace api\controllers;
 
 use api\common\CouponApi;
+use app\common\JwtAuth;
 
 /**
  * Created by PhpStorm.
@@ -26,7 +27,7 @@ class CouponController extends ShoppingBaseController {
              * “preflighted” requests first send an HTTP OPTIONS request header to the resource on the other domain, in order to determine whether the actual request is safe to send.
              * 然后得到服务器response许可之后，再发起其post请求。
              */
-            'except'=>['index', 'create', 'options', 'info', 'user-list']
+            'except'=>[]
         ];
         return $behaviors;
     }

@@ -9,6 +9,7 @@
 namespace api\controllers;
 
 use api\models\VproAuth;
+use app\common\Common;
 use app\common\JwtAuth;
 use app\controllers\BaseController;
 use app\models\ModelFactory;
@@ -45,8 +46,11 @@ class AuthController extends BaseController{
         ];
         return $actions;
     }
-    public function actionIndex(){
-        return [];
+    public function actionIndex() {
+
+//        Common::testToken();
+
+        return Common::verifyToken('eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiIsImp0aSI6IjExMTExMTEifQ.eyJpc3MiOiJtYXJrIiwiYXVkIjoiemh1Iiwic3ViIjoiZXZlcnlvbmUiLCJleHAiOjE1Mjk1NzQ5MDAsImlhdCI6MTUyOTU3MTMwMCwianRpIjoiMTExMTExMSIsImF1dGhfaWQiOiIxIiwiYXV0aF9hcHBpZCI6Im1hcmsifQ.KpiwoQE0_MdormcGVnSh5FIYCBGIcrJ2tghxRMV1xYo');
     }
     public function actionOptions(){
         \Yii::$app->getResponse()->setStatusCode(204);
@@ -61,8 +65,8 @@ class AuthController extends BaseController{
         if($token === '')return ['code' => $this->params['USER_TOKEN_ILLEGAL'], 'data' => 'token is null'];
         $vpro_auth = new VproAuth();
         $user_info = $vpro_auth::findOne(['auth_token' => $token]);
-        if(!$user_info)return ['code' => $this->params['USER_TOKEN_NOT_FOUND'], 'data' => 'user token could not found'];
-
+        if (!$user_info)return ['code' => $this->params['USER_TOKEN_NOT_FOUND'], 'data' => 'user token could not found'];
+        if (!Common::verifyToken($token)) return ['code' => $this->params['USER_TOKEN_EXPIRED'], 'data' => 'user token expired'];
         return ['data'=>['roles'=>[$user_info->roles_name], 'name'=>$user_info->auth_appid, 'avatar'=>'123', 'id'=>$user_info->auth_id], 'code'=>20000];
     }
     public function actionLogout(){

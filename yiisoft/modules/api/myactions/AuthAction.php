@@ -43,12 +43,15 @@ class AuthAction extends Action{
         }
         else{
             // 这里需要做限制，防止数据库攻击
-            $model=$model::findOne(['auth_appid'=>urlencode($auth_appid),'auth_appkey'=>$auth_appkey]);
+            $model=$model::findOne(['auth_appid'=>$auth_appid]);
+            if ($model) {
+                $passRes = Common::decrypt($model->auth_appkey) == $auth_appkey;
+            }
 //            $model->auth_token="";
 //            $model->update();
         }
         //判断该记录中的认证时间是否超过限定时间，没有超过直接返回该记录，超过了就生成新字符串、认证时间和IP保存到数据库，然后返回记录。
-        if($model){
+        if($passRes) {
             $signer=new Sha256();
             $key=\Yii::$app->params['securityKey'];
             $jwt = $model->auth_token ? (new Parser())->parse((string)$model->auth_token):false;

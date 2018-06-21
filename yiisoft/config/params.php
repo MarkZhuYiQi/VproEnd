@@ -32,7 +32,7 @@ K+4qGxYpmUMvbVy/cPBl++LNZjxa18IDvrbmeBUIJK3KwbTq8STA6bEPWQUtCU7Z
     'USER_PARAMS_NULL'                          =>          50016,
 
     'securityKey'=>'MarkZhu',
-    'expireTime'                                =>          3600*24,
+    'expireTime'                                =>          3600,
     'aliconfig' =>[
         'use_sandbox'                           =>          true,
         'app_id'                                =>          '2016082000290082',
