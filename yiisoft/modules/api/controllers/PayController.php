@@ -47,10 +47,10 @@ class PayController extends CombaseController {
         $orderInfo = array_map(function($v){
             return (string)$v;
         }, $orderInfo);
-        /*$orderInfo=[
+/*        $orderInfo=[
             'body'    => 'ali web pay',
             'subject'    => '测试支付宝',
-            'order_no'    => '12345678912345678213',
+            'order_no'    => '129428062346563278',
             'timeout_express' => time() + 600,// 表示必须  内付款
             'amount'    => '0.01',// 单位为元 ,最小为0.01
             'return_param' => '123123',
